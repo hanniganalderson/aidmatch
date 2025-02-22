@@ -153,6 +153,13 @@ const EducationLevelCard = ({ level, selected, onClick }: { level: string; selec
   );
 };
 
+const SearchInput = ({ icon: Icon, ...props }: { icon: any } & React.InputHTMLAttributes<HTMLInputElement>) => (
+  <div className="relative">
+    <Icon className="absolute left-3 top-[50%] -translate-y-[50%] w-5 h-5 text-gray-400 pointer-events-none" />
+    <input {...props} className={`input-field pl-10 ${props.className || ''}`} />
+  </div>
+);
+
 export function Questionnaire() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -242,8 +249,9 @@ export function Questionnaire() {
   };
 
   const handleNext = async () => {
-    if (!answers[questions[currentStep].id]) {
-      setError('Please select an option to continue');
+    const currentAnswer = answers[questions[currentStep].id];
+    if (!currentAnswer || currentAnswer.trim() === '') {
+      setError('Please provide an answer to continue');
       return;
     }
 
@@ -275,6 +283,7 @@ export function Questionnaire() {
   const handleBack = () => {
     if (currentStep > 0) {
       setCurrentStep(prev => prev - 1);
+      setError(null);
     } else {
       navigate('/');
     }
@@ -325,42 +334,77 @@ export function Questionnaire() {
         );
       case 'combobox':
         return (
-          <div className="relative major-dropdown">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                value={majorInput}
-                onChange={(e) => handleMajorInput(e.target.value)}
-                onFocus={() => setDropdownOpen(true)}
-                className="input-field pl-10"
-                placeholder="Search or enter your major"
-              />
-            </div>
-            <AnimatePresence>
-              {dropdownOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="absolute z-20 w-full mt-2 py-1 bg-[#222222] rounded-lg border border-[#333333] max-h-60 overflow-y-auto"
-                >
-                  {filteredMajors.map((major) => (
-                    <motion.button
-                      key={major}
-                      whileHover={{ backgroundColor: 'rgba(255,255,255,0.1)' }}
-                      onClick={() => handleMajorSelect(major)}
-                      className="w-full flex items-center justify-between px-4 py-3 text-gray-300 transition-colors"
+          <div className="relative">
+            {currentQuestion.id === 'school' ? (
+              <div>
+                <SearchInput
+                  icon={Search}
+                  type="text"
+                  value={schoolInput}
+                  onChange={(e) => handleSchoolInput(e.target.value)}
+                  placeholder="Enter your school name"
+                />
+                <AnimatePresence>
+                  {showSchoolDropdown && schoolSuggestions.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="absolute z-20 w-full mt-2 py-1 bg-[#222222] rounded-lg border border-[#333333] max-h-60 overflow-y-auto"
                     >
-                      <span>{major}</span>
-                      {major === answers[currentQuestion.id] && (
-                        <Check className="w-4 h-4 text-[#5865F2]" />
-                      )}
-                    </motion.button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
+                      {schoolSuggestions.map((school) => (
+                        <motion.button
+                          key={school}
+                          whileHover={{ backgroundColor: 'rgba(255,255,255,0.1)' }}
+                          onClick={() => handleSchoolSelect(school)}
+                          className="w-full flex items-center justify-between px-4 py-3 text-gray-300 transition-colors"
+                        >
+                          <span>{school}</span>
+                          {school === answers[currentQuestion.id] && (
+                            <Check className="w-4 h-4 text-[#5865F2]" />
+                          )}
+                        </motion.button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ) : (
+              <div>
+                <SearchInput
+                  icon={Search}
+                  type="text"
+                  value={majorInput}
+                  onChange={(e) => handleMajorInput(e.target.value)}
+                  onFocus={() => setDropdownOpen(true)}
+                  placeholder="Search or enter your major"
+                />
+                <AnimatePresence>
+                  {dropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="absolute z-20 w-full mt-2 py-1 bg-[#222222] rounded-lg border border-[#333333] max-h-60 overflow-y-auto"
+                    >
+                      {filteredMajors.map((major) => (
+                        <motion.button
+                          key={major}
+                          whileHover={{ backgroundColor: 'rgba(255,255,255,0.1)' }}
+                          onClick={() => handleMajorSelect(major)}
+                          className="w-full flex items-center justify-between px-4 py-3 text-gray-300 transition-colors"
+                        >
+                          <span>{major}</span>
+                          {major === answers[currentQuestion.id] && (
+                            <Check className="w-4 h-4 text-[#5865F2]" />
+                          )}
+                        </motion.button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
           </div>
         );
       case 'slider':
@@ -455,15 +499,18 @@ export function Questionnaire() {
           </AnimatePresence>
 
           <div className="flex justify-between mt-8">
-            <button onClick={handleBack} className="btn-outline">
+            <button 
+              onClick={handleBack} 
+              className="px-6 py-3 rounded-lg border border-[#333333] text-gray-300 hover:bg-[#222222] transition-colors"
+            >
               ← Back
             </button>
-            <button
-              onClick={handleNext}
+            <button 
+              onClick={handleNext} 
               disabled={!answers[currentQuestion.id]}
-              className="btn-primary"
+              className="px-6 py-3 rounded-lg bg-[#5865F2] hover:bg-[#4752C4] text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {currentStep < questions.length - 1 ? 'Continue' : 'See Matches'}
+              {currentStep < questions.length - 1 ? 'Continue →' : 'See Matches →'}
             </button>
           </div>
         </motion.div>

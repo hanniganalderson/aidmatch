@@ -100,7 +100,7 @@ export function Results() {
 
   const handleSaveScholarship = async (scholarship: Scholarship) => {
     if (!user) {
-      navigate('/login');
+      navigate('/signup', { state: { from: location.pathname } });
       return;
     }
 

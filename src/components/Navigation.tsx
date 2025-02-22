@@ -23,13 +23,13 @@ export function Navigation() {
           
           <div className="hidden md:flex items-center space-x-6">
             {navItems.map((item) => (
-              <a
+              <Link
                 key={item.label}
-                href={item.href}
+                to={item.href}
                 className="navbar-link"
               >
                 {item.label}
-              </a>
+              </Link>
             ))}
           </div>
         </div>

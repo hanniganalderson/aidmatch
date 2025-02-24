@@ -1,0 +1,137 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply bg-surface text-white antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  body {
+    @apply min-h-screen;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-medium tracking-tight;
+  }
+
+  h1 {
+    @apply text-3xl md:text-4xl lg:text-5xl;
+    line-height: 1.1;
+  }
+
+  h2 {
+    @apply text-2xl md:text-3xl;
+    line-height: 1.2;
+  }
+
+  p {
+    @apply text-[#F5F5F5] leading-relaxed;
+  }
+}
+
+@layer components {
+  .input-field {
+    @apply w-full px-4 py-3 rounded-xl border border-surface-50 
+           bg-surface-100 text-white placeholder-gray-400
+           focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500
+           hover:border-surface-50/80
+           transition-all duration-200;
+  }
+
+  .btn-primary {
+    @apply px-6 py-3 bg-primary-500 text-white rounded-xl
+           hover:bg-primary-600 hover:scale-[1.02] hover:shadow-premium-hover
+           focus:outline-none focus:ring-2 focus:ring-primary-500/50 
+           active:scale-[0.98]
+           disabled:opacity-50 disabled:cursor-not-allowed
+           transition-all duration-200;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 bg-surface-50 text-white rounded-xl
+           hover:bg-surface-100 hover:scale-[1.02] hover:shadow-premium
+           focus:outline-none focus:ring-2 focus:ring-surface-50/50
+           active:scale-[0.98]
+           disabled:opacity-50 disabled:cursor-not-allowed
+           transition-all duration-200;
+  }
+
+  .btn-outline {
+    @apply px-6 py-3 border border-surface-50 text-white rounded-xl
+           hover:bg-surface-50/10 hover:border-surface-50/80
+           focus:outline-none focus:ring-2 focus:ring-surface-50/50
+           active:scale-[0.98]
+           disabled:opacity-50 disabled:cursor-not-allowed
+           transition-all duration-200;
+  }
+
+  .card {
+    @apply bg-surface-100 rounded-xl border border-surface-50
+           hover:shadow-premium hover:border-surface-50/80
+           transition-all duration-200;
+  }
+
+  .card-hover {
+    @apply hover:scale-[1.02] hover:shadow-premium-hover
+           hover:border-primary-500/20;
+  }
+
+  .input-glow {
+    @apply focus:shadow-glow;
+  }
+
+  .premium-gradient {
+    @apply bg-gradient-premium;
+  }
+
+  .premium-text {
+    @apply bg-gradient-premium bg-clip-text text-transparent;
+  }
+
+  .animated-bg {
+    @apply absolute inset-0 bg-gradient-radial from-primary-500/20 via-transparent to-transparent 
+           blur-3xl opacity-30 animate-pulse-slow;
+  }
+
+  .glass-effect {
+    @apply backdrop-blur-xl bg-surface-100/80 border border-surface-50/50;
+  }
+
+  .hover-glow {
+    @apply hover:shadow-glow transition-shadow duration-200;
+  }
+
+  .floating-element {
+    @apply animate-float;
+  }
+}
+
+/* Mobile Optimizations */
+@media (max-width: 640px) {
+  .btn-primary, .btn-secondary, .btn-outline {
+    @apply w-full justify-center;
+  }
+
+  .input-field {
+    @apply px-4 py-3;
+  }
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  @apply w-2;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-surface-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-surface-50 rounded-full
+         hover:bg-surface-50/80
+         transition-colors duration-200;
+}

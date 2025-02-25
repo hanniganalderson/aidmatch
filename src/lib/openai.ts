@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import type { Scholarship, UserProfile } from '../types';
 
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
@@ -80,7 +81,7 @@ export async function callOpenAI(
   }
 }
 
-export async function getScholarshipExplanation(scholarship: any, userProfile: any): Promise<string> {
+export async function getScholarshipExplanation(scholarship: Scholarship, userProfile: UserProfile): Promise<string> {
   try {
     const prompt = `
       Analyze this scholarship match and explain why it's a good opportunity for the student.
@@ -122,5 +123,25 @@ export async function getScholarshipExplanation(scholarship: any, userProfile: a
   } catch (error) {
     console.error('Error generating explanation:', error);
     throw new Error('Unable to generate explanation. Please try again later.');
+  }
+}
+
+export async function getEssayOutline(scholarship: Scholarship): Promise<string> {
+  try {
+    const messages: OpenAIMessage[] = [
+      {
+        role: 'system',
+        content: 'You are a helpful writing assistant that creates essay outlines for scholarship applications.'
+      },
+      {
+        role: 'user',
+        content: `Create a detailed essay outline for the following scholarship: ${scholarship.name} by ${scholarship.provider}. Consider any specific requirements or themes mentioned in the description: ${scholarship.description}`
+      }
+    ];
+
+    return callOpenAI(messages, GPT_4);
+  } catch (error) {
+    console.error('Error generating essay outline:', error);
+    throw new Error('Unable to generate essay outline. Please try again later.');
   }
 }

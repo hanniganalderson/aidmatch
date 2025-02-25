@@ -1,0 +1,72 @@
+/* Global Styles */
+
+/* Sidebar Styles */
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 16px;
+  gap: 12px;
+  height: 100%;
+  transition: background-color 0.2s ease;
+}
+
+.sidebar-logo:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-item {
+  padding: 12px 16px;
+  border-radius: 8px;
+  transition: background 0.2s ease-in-out;
+}
+
+.sidebar-item:hover,
+.sidebar-item.active {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Button Styles */
+.button-primary {
+  background-color: #5865F2;
+  padding: 10px 18px;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+}
+
+.button-primary:hover {
+  background-color: #4752C4;
+}
+
+/* Typography */
+h1 {
+  font-weight: 600;
+}
+
+.hero-subtitle {
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Scholarship Card Styles */
+.scholarship-card {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+  background: rgba(20, 20, 20, 0.8);
+  transition: border 0.2s ease-in-out;
+}
+
+.scholarship-card:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Badge Styles */
+.badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(67, 181, 129, 0.1);
+  color: #43B581;
+  font-size: 0.875rem;
+  font-weight: 500;
+}

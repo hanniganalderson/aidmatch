@@ -1,5 +1,4 @@
-import type { Scholarship } from '../types';
-import type { UserProfile } from './scholarshipService';
+import type { Scholarship, UserProfile } from '../types';
 
 const STEM_MAJORS = [
   'Computer Science',
@@ -19,9 +18,11 @@ const STEM_MAJORS = [
 ];
 
 function isSTEMMajor(major: string): boolean {
-  return STEM_MAJORS.some(stemMajor => 
-    major.toLowerCase().includes(stemMajor.toLowerCase())
-  );
+  return STEM_MAJORS.some(stemMajor => {
+    const normalizedMajor = major.toLowerCase();
+    const normalizedStemMajor = stemMajor.toLowerCase();
+    return normalizedMajor.includes(normalizedStemMajor) || normalizedStemMajor.includes(normalizedMajor);
+  });
 }
 
 export function calculateScholarshipScore(scholarship: Scholarship, userProfile: UserProfile): number {

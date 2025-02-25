@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Users, Clock, ExternalLink, BookOpen, Star, HelpCircle, PenTool, Loader2, AlertCircle } from 'lucide-react';
+import { Trophy, Users, Clock, ExternalLink, BookOpen, Star, HelpCircle, PenTool, Loader2, AlertCircle, Check } from 'lucide-react';
 import { getScholarshipExplanation, getEssayOutline } from '../lib/openai';
 import type { Scholarship } from '../types';
 
@@ -51,7 +51,7 @@ export function ScholarshipCard({ scholarship, userProfile }: ScholarshipCardPro
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-[#1A1A1A] rounded-xl border border-[#333333] p-8 hover:shadow-lg transition-all duration-200"
+      className="scholarship-card"
     >
       <div className="flex items-start justify-between mb-6">
         <div>
@@ -63,17 +63,19 @@ export function ScholarshipCard({ scholarship, userProfile }: ScholarshipCardPro
           </div>
         </div>
         <div className="flex flex-col items-end">
-          <div className="flex items-center space-x-2 px-4 py-2 bg-[#5865F2]/20 text-[#5865F2] rounded-lg mb-2">
-            <Trophy className="w-5 h-5" />
-            <span className="text-lg font-bold">
-              ${scholarship.amount.toLocaleString()}
-            </span>
-          </div>
-          {scholarship.roi_score && (
-            <div className="text-sm text-[#888888]">
-              ROI Score: {scholarship.roi_score}/100
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center space-x-2 px-4 py-2 bg-[#5865F2]/20 text-[#5865F2] rounded-lg">
+              <Trophy className="w-5 h-5" />
+              <span className="text-lg font-bold">
+                ${scholarship.amount.toLocaleString()}
+              </span>
             </div>
-          )}
+            {scholarship.match_score && (
+              <div className="text-sm text-[#43B581] font-medium">
+                {Math.min(scholarship.match_score, 100)}% Match
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -92,7 +94,7 @@ export function ScholarshipCard({ scholarship, userProfile }: ScholarshipCardPro
           <div>
             <div className="text-[#888888]">Deadline</div>
             <div className="text-sm text-[#FFB224] font-medium">
-              {new Date(scholarship.deadline).toLocaleDateString()}
+              {scholarship.deadline ? new Date(scholarship.deadline).toLocaleDateString() : 'No deadline'}
             </div>
           </div>
         </div>
@@ -100,8 +102,14 @@ export function ScholarshipCard({ scholarship, userProfile }: ScholarshipCardPro
           <BookOpen className="w-5 h-5 text-[#43B581]" />
           <div>
             <div className="text-[#888888]">Major</div>
-            <div className="text-sm text-[#43B581] font-medium">
-              {scholarship.major || 'Any Major'}
+            <div className="flex flex-wrap gap-2">
+              {scholarship.majors ? (
+                scholarship.majors.map((major: string, index: number) => (
+                  <span key={index} className="text-sm text-[#43B581] font-medium">{major}</span>
+                ))
+              ) : (
+                <span className="text-sm text-[#43B581] font-medium">{scholarship.major || 'Any Major'}</span>
+              )}
             </div>
           </div>
         </div>

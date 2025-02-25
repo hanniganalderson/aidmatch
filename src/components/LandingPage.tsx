@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Brain, Shield, Target, GraduationCap } from 'lucide-react';
+import { GraduationCap } from 'lucide-react';
 
 export function LandingPage() {
   const navigate = useNavigate();
@@ -10,22 +10,14 @@ export function LandingPage() {
       <div className="relative pt-32 pb-20">
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto text-center space-y-8">
-            <div className="flex flex-wrap justify-center gap-3">
+            <div className="flex justify-center">
               <div className="px-3 py-1 bg-[#5865F2]/10 text-[#5865F2] rounded-full text-sm font-medium flex items-center gap-1.5">
-                <Brain className="w-4 h-4" />
-                AI-Powered Matching
-              </div>
-              <div className="px-3 py-1 bg-[#4A90E2]/10 text-[#4A90E2] rounded-full text-sm font-medium flex items-center gap-1.5">
-                <Target className="w-4 h-4" />
-                Personalized Results
-              </div>
-              <div className="px-3 py-1 bg-[#43B581]/10 text-[#43B581] rounded-full text-sm font-medium flex items-center gap-1.5">
-                <Shield className="w-4 h-4" />
-                Verified Scholarships
+                <GraduationCap className="w-4 h-4" />
+                Smart Scholarship Matching
               </div>
             </div>
 
-            <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight mb-8">
+            <h1 className="text-5xl sm:text-6xl md:text-7xl font-semibold tracking-tight mb-8">
               Find scholarships
               <br />
               <span className="bg-gradient-to-r from-[#5865F2] to-[#4A90E2] text-transparent bg-clip-text">
@@ -38,13 +30,12 @@ export function LandingPage() {
               Stop searching, start applying.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="mt-8 mb-12 flex flex-col sm:flex-row items-center justify-center gap-4">
               <button
                 onClick={() => navigate('/questionnaire')}
-                className="group relative w-full sm:w-auto px-8 py-4 bg-[#5865F2] hover:bg-[#4752C4] rounded-xl transition-all duration-200 font-medium flex items-center justify-center gap-2"
+                className="button-primary w-full sm:w-auto px-6 py-3 bg-[#5865F2] hover:bg-[#4752C4] rounded-lg transition-all duration-200 font-medium flex items-center justify-center gap-2"
               >
-                Get Started
-                <span>→</span>
+                Get Started →
               </button>
               <button 
                 onClick={() => navigate('/about')}
@@ -62,14 +53,14 @@ export function LandingPage() {
         <div className="container mx-auto px-6">
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             <div className="p-6 bg-[#222222] rounded-xl">
-              <Brain className="w-8 h-8 text-[#5865F2] mb-4" />
+              <GraduationCap className="w-8 h-8 text-[#5865F2] mb-4" />
               <h3 className="text-xl font-semibold mb-2">Smart Matching</h3>
-              <p className="text-gray-400">Our AI analyzes your profile to find scholarships you're most qualified for.</p>
+              <p className="text-gray-400">Find scholarships that perfectly match your qualifications and goals.</p>
             </div>
             <div className="p-6 bg-[#222222] rounded-xl">
-              <Target className="w-8 h-8 text-[#4A90E2] mb-4" />
+              <GraduationCap className="w-8 h-8 text-[#4A90E2] mb-4" />
               <h3 className="text-xl font-semibold mb-2">Personalized Results</h3>
-              <p className="text-gray-400">Get scholarship recommendations based on your unique qualifications and interests.</p>
+              <p className="text-gray-400">Get scholarship recommendations tailored to your unique profile.</p>
             </div>
             <div className="p-6 bg-[#222222] rounded-xl">
               <GraduationCap className="w-8 h-8 text-[#43B581] mb-4" />

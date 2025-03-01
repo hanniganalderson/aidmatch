@@ -1,0 +1,229 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-bg-primary: 248 250 252;
+    --color-bg-secondary: 241 245 249;
+    --color-text-primary: 15 23 42;
+    --color-text-secondary: 71 85 105;
+    --color-accent: 37 99 235;
+  }
+
+  .dark {
+    --color-bg-primary: 23 25 35;
+    --color-bg-secondary: 26 30 42;
+    --color-text-primary: 255 255 255;
+    --color-text-secondary: 156 163 175;
+    --color-accent: 37 99 235;
+  }
+
+  html {
+    @apply bg-gray-50 text-gray-900 dark:bg-[#0F1117] dark:text-white antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  body {
+    @apply min-h-screen;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-medium tracking-tight text-gray-900 dark:text-white;
+  }
+
+  h1 {
+    @apply text-3xl md:text-4xl lg:text-5xl;
+    line-height: 1.1;
+  }
+
+  h2 {
+    @apply text-2xl md:text-3xl;
+    line-height: 1.2;
+  }
+
+  p {
+    @apply text-gray-700 dark:text-gray-200 leading-relaxed;
+  }
+  
+  /* Ensure text is always visible in both modes */
+  .dark .text-gray-900 {
+    @apply text-white;
+  }
+  
+  .dark .text-gray-800 {
+    @apply text-gray-100;
+  }
+  
+  .dark .text-gray-700 {
+    @apply text-gray-200;
+  }
+  
+  .dark .text-gray-600 {
+    @apply text-gray-300;
+  }
+  
+  .dark .text-gray-500 {
+    @apply text-gray-400;
+  }
+  
+  /* Ensure input text is visible */
+  .dark input, .dark select, .dark textarea {
+    @apply text-white bg-gray-800 border-gray-700;
+  }
+  
+  /* Improve contrast for placeholders */
+  .dark input::placeholder, .dark textarea::placeholder {
+    @apply text-gray-400;
+  }
+  
+  /* Ensure buttons have proper contrast */
+  .dark button:not([class*="bg-"]) {
+    @apply text-gray-200 hover:text-white;
+  }
+}
+
+@layer components {
+  .input-field {
+    @apply w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-[#2A2D3A] 
+           bg-white dark:bg-[#171923] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400
+           focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500
+           hover:border-gray-400 dark:hover:border-[#3A3F55]
+           transition-all duration-200;
+  }
+
+  .btn-primary {
+    @apply px-6 py-3 bg-black dark:bg-blue-600 text-white rounded-lg
+           hover:bg-gray-800 dark:hover:bg-blue-700 hover:shadow-md
+           focus:outline-none focus:ring-2 focus:ring-blue-500/50 
+           active:scale-[0.98]
+           disabled:opacity-50 disabled:cursor-not-allowed
+           transition-all duration-200;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 bg-gray-100 dark:bg-[#2A2D3A] text-gray-900 dark:text-white rounded-lg
+           hover:bg-gray-200 dark:hover:bg-[#3A3F55] hover:shadow-md
+           focus:outline-none focus:ring-2 focus:ring-gray-200/50 dark:focus:ring-[#2A2D3A]/50
+           active:scale-[0.98]
+           disabled:opacity-50 disabled:cursor-not-allowed
+           transition-all duration-200;
+  }
+
+  .btn-outline {
+    @apply px-6 py-3 border border-gray-300 dark:border-[#2A2D3A] text-gray-700 dark:text-white rounded-lg
+           hover:bg-gray-50 dark:hover:bg-[#2A2D3A]/10 hover:border-gray-400 dark:hover:border-[#3A3F55]
+           focus:outline-none focus:ring-2 focus:ring-gray-200/50 dark:focus:ring-[#2A2D3A]/50
+           active:scale-[0.98]
+           disabled:opacity-50 disabled:cursor-not-allowed
+           transition-all duration-200;
+  }
+
+  .card {
+    @apply bg-white dark:bg-[#171923] rounded-lg border border-gray-200 dark:border-[#2A2D3A]
+           hover:shadow-md hover:border-gray-300 dark:hover:border-[#3A3F55]
+           transition-all duration-200;
+  }
+
+  .card-hover {
+    @apply hover:shadow-md hover:border-blue-500/20
+           transition-all duration-200;
+  }
+
+  .bg-gradient-blue {
+    @apply bg-gradient-to-r from-blue-600 to-indigo-600;
+  }
+
+  .blue-text {
+    @apply bg-gradient-to-r from-blue-500 to-indigo-500 bg-clip-text text-transparent;
+  }
+
+  .glass-effect {
+    @apply backdrop-blur-xl bg-white/80 dark:bg-[#171923]/80 border border-gray-200/50 dark:border-[#2A2D3A]/50;
+  }
+
+  .feature-card {
+    @apply p-6 rounded-lg border border-gray-200 dark:border-[#2A2D3A] bg-white/60 dark:bg-[#171923]/60 backdrop-blur-sm
+           hover:border-blue-500/30 dark:hover:border-blue-500/30 transition-all duration-200 hover:shadow-md;
+  }
+
+  .gradient-border {
+    @apply relative p-[1px] rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 overflow-hidden;
+  }
+
+  .gradient-border-content {
+    @apply bg-white dark:bg-[#171923] rounded-xl p-6 relative z-10;
+  }
+}
+
+/* Mobile Optimizations */
+@media (max-width: 640px) {
+  .btn-primary, .btn-secondary, .btn-outline {
+    @apply w-full justify-center;
+  }
+
+  .input-field {
+    @apply px-4 py-3;
+  }
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  @apply w-2;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-[#171923];
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-[#2A2D3A] rounded-full
+         hover:bg-gray-400 dark:hover:bg-[#3A3F55]
+         transition-colors duration-200;
+}
+
+/* Animation Classes */
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-pulse-slow {
+  animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Background Styles */
+.bg-grid {
+  background-image: url('/grid.svg');
+  background-repeat: repeat;
+  background-size: 50px 50px;
+  background-position: center;
+  opacity: 0.05;
+}
+
+.bg-gradient-radial {
+  background: radial-gradient(circle at center, rgba(59, 130, 246, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
+}
+
+.bg-gradient-mesh {
+  background-image: 
+    linear-gradient(to right, rgba(59, 130, 246, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(59, 130, 246, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.bg-noise {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.05;
+}

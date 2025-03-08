@@ -1,44 +1,60 @@
-// src/lib/scholarshipMatchingService.ts
+// src/lib/ScholarshipMatchingService.ts
 import { supabase } from './supabase';
-import type { Scholarship, UserProfile, ScoredScholarship } from '../types';
+import { calculateScholarshipScore, diversifyResults, categorizeScholarships } from './scoring';
+import type { Scholarship, UserProfile, ScoredScholarship, MatchResult } from '../types';
 
-// Define STEM majors for special matching
-const STEM_MAJORS = [
-  'Computer Science', 'Engineering', 'Mathematics', 'Physics', 'Chemistry',
-  'Biology', 'Information Technology', 'Data Science', 'Statistics',
-  'Biochemistry', 'Environmental Science', 'Neuroscience', 'Robotics', 'Cybersecurity'
-];
+// Implements a cache for scholarship matching results
+class MatchResultCache {
+  private cache = new Map<string, { data: MatchResult; timestamp: number }>();
+  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-// Define Business majors for special matching
-const BUSINESS_MAJORS = [
-  'Business', 'Finance', 'Accounting', 'Economics', 'Marketing',
-  'Management', 'Entrepreneurship', 'Business Administration'
-];
+  // Generate a cache key from user profile
+  private createCacheKey(userProfile: UserProfile): string {
+    return `${userProfile.education_level}|${userProfile.major}|${userProfile.gpa}|${userProfile.location}|${userProfile.is_pell_eligible}`;
+  }
 
-// Define major categories for better matching
-const MAJOR_CATEGORIES: Record<string, string[]> = {
-  'STEM': STEM_MAJORS,
-  'Business': BUSINESS_MAJORS,
-  // Add more categories as needed
-};
+  // Get cached result if available
+  get(userProfile: UserProfile): MatchResult | null {
+    const key = this.createCacheKey(userProfile);
+    const cachedItem = this.cache.get(key);
+    
+    if (!cachedItem) return null;
+    
+    // Check if cache is still valid
+    if (Date.now() - cachedItem.timestamp > this.CACHE_DURATION) {
+      this.cache.delete(key);
+      return null;
+    }
+    
+    return cachedItem.data;
+  }
 
-// Check if a major belongs to a category
-function isMajorInCategory(major: string, category: string): boolean {
-  const categoryMajors = MAJOR_CATEGORIES[category];
-  if (!categoryMajors) return false;
-  
-  const normalizedMajor = major.toLowerCase();
-  return categoryMajors.some(categoryMajor => {
-    const normalizedCategoryMajor = categoryMajor.toLowerCase();
-    return normalizedMajor.includes(normalizedCategoryMajor) || 
-           normalizedCategoryMajor.includes(normalizedMajor);
-  });
+  // Store result in cache
+  set(userProfile: UserProfile, result: MatchResult): void {
+    const key = this.createCacheKey(userProfile);
+    this.cache.set(key, {
+      data: result,
+      timestamp: Date.now()
+    });
+  }
+
+  // Clear the entire cache
+  clear(): void {
+    this.cache.clear();
+  }
 }
 
-// Stage 1: Get initial scholarship matches from the database
+// Create cache instance
+const matchCache = new MatchResultCache();
+
+/**
+ * Get initial scholarship matches from the database
+ */
 async function getInitialScholarshipMatches(userProfile: UserProfile): Promise<Scholarship[]> {
   try {
-    // Try to use the database function if available
+    console.log('Fetching initial scholarship matches from database...');
+    
+    // First try to use the optimized database function
     const { data: fnData, error: fnError } = await supabase.rpc(
       'match_scholarships',
       {
@@ -46,25 +62,29 @@ async function getInitialScholarshipMatches(userProfile: UserProfile): Promise<S
         user_gpa: userProfile.gpa,
         user_location: userProfile.location,
         user_major: userProfile.major,
-        limit_count: 100
+        limit_count: 200 // Get a larger initial pool
       }
     );
 
     if (!fnError && fnData) {
+      console.log(`Found ${fnData.length} initial matches using RPC function`);
       return fnData;
     }
 
+    console.log('RPC function failed or not available, falling back to query');
+    
     // Fallback to direct query if function fails
-    console.log('Falling back to direct query');
     const { data, error } = await supabase
       .from('scholarships')
       .select('*')
       .or(`gpa_requirement.is.null,gpa_requirement.lte.${userProfile.gpa}`)
       .or(`education_level.cs.{${userProfile.education_level}},education_level.is.null`)
       .or(`state.eq.${userProfile.location},national.eq.true,state.is.null`)
-      .limit(100);
+      .limit(200);
 
     if (error) throw error;
+    
+    console.log(`Found ${data?.length || 0} initial matches using direct query`);
     return data || [];
   } catch (error) {
     console.error('Error in database filtering:', error);
@@ -73,163 +93,35 @@ async function getInitialScholarshipMatches(userProfile: UserProfile): Promise<S
     const { data: allData } = await supabase
       .from('scholarships')
       .select('*')
-      .limit(100);
+      .limit(200);
     
+    console.log(`Fallback: returning ${allData?.length || 0} scholarships without filtering`);
     return allData || [];
   }
 }
 
-// Stage 2: Calculate detailed match score
-function calculateScholarshipScore(scholarship: Scholarship, userProfile: UserProfile): number {
-  let score = 100; // Start with perfect score and deduct/add points
-
-  // Education Level Match (0-25 points)
-  if (Array.isArray(scholarship.education_level) && 
-      scholarship.education_level.includes(userProfile.education_level)) {
-    score += 25;
-  } else if (!scholarship.education_level) {
-    score += 15; // Some bonus for no requirements
-  } else {
-    score -= 25; // Penalty for mismatch
-  }
-
-  // Location Match (0-20 points)
-  if (scholarship.national || !scholarship.state) {
-    score += 10; // National scholarships are good
-  } else if (scholarship.state === userProfile.location) {
-    score += 20; // Local match is better
-  } else {
-    score -= 20; // Wrong state is a significant penalty
-  }
-
-  // School Match if specified (0-25 points)
-  if (scholarship.school) {
-    if (scholarship.school.toLowerCase() === userProfile.school.toLowerCase()) {
-      score += 25; // School-specific match is excellent
-    } else {
-      score -= 25; // Wrong school is a significant penalty
-    }
-  }
-
-  // Major Match (0-30 points)
-  if (!scholarship.major) {
-    score += 15; // No specific major required
-  } else if (scholarship.major.toLowerCase() === userProfile.major.toLowerCase()) {
-    score += 30; // Direct major match
-  } else if (scholarship.major === 'STEM' && isMajorInCategory(userProfile.major, 'STEM')) {
-    score += 25; // STEM category match
-  } else if (scholarship.major === 'Business' && isMajorInCategory(userProfile.major, 'Business')) {
-    score += 25; // Business category match
-  } else {
-    score -= 30; // Wrong major is a significant penalty
-  }
-
-  // GPA Score (0-25 points)
-  if (!scholarship.gpa_requirement) {
-    score += 15; // No GPA requirement
-  } else {
-    const gpaBuffer = userProfile.gpa - scholarship.gpa_requirement;
-    if (gpaBuffer >= 0) {
-      // Add points based on how much they exceed the requirement (up to 25)
-      score += Math.min(15 + (gpaBuffer * 10), 25);
-    } else {
-      score -= 100; // They don't meet the requirement, this should eliminate it
-    }
-  }
-
-  // Amount Factor (0-20 points)
-  const amountScore = Math.min(20, (scholarship.amount / 10000) * 20);
-  score += amountScore;
-
-  // Competition Level Adjustment (-10 to +10 points)
-  switch (scholarship.competition_level) {
-    case 'Low':
-      score += 10;
-      break;
-    case 'Medium':
-      score += 5;
-      break;
-    case 'High':
-      score -= 5;
-      break;
-  }
-
-  // Is Pell Grant eligible special case
-  if (scholarship.is_pell_eligible && userProfile.is_pell_eligible) {
-    score += 15;
-  } else if (scholarship.is_pell_eligible && !userProfile.is_pell_eligible) {
-    score -= 100; // They don't qualify, eliminate it
-  }
-
-  // Deadline Proximity Factor (-10 to +10 points)
-  if (scholarship.deadline) {
-    const daysUntilDeadline = Math.ceil(
-      (new Date(scholarship.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-    );
-    
-    if (daysUntilDeadline <= 0) {
-      score -= 100; // Past deadline, eliminate it
-    } else if (daysUntilDeadline <= 7) {
-      score += 10; // Very urgent
-    } else if (daysUntilDeadline <= 30) {
-      score += 5; // Somewhat urgent
-    } else if (daysUntilDeadline > 120) {
-      score -= 5; // Far off
-    }
-  }
-
-  // Normalize final score to 0-100 range with a floor of 0
-  return Math.max(0, Math.min(100, Math.round(score)));
-}
-
-// Stage 3: Apply business rules and diversity
-function applyBusinessRules(scoredScholarships: ScoredScholarship[]): ScoredScholarship[] {
-  // Group by provider
-  const byProvider: Record<string, ScoredScholarship[]> = {};
-  
-  for (const scholarship of scoredScholarships) {
-    const provider = scholarship.provider || 'Unknown';
-    if (!byProvider[provider]) {
-      byProvider[provider] = [];
-    }
-    byProvider[provider].push(scholarship);
+/**
+ * Get matched scholarships for a user profile
+ */
+export async function getMatchedScholarships(userProfile: UserProfile): Promise<MatchResult> {
+  // Check cache first
+  const cachedResult = matchCache.get(userProfile);
+  if (cachedResult) {
+    console.log('Using cached scholarship match result');
+    return cachedResult;
   }
   
-  // Diversify results by limiting scholarships per provider
-  const diverseResults: ScoredScholarship[] = [];
-  const providerLimit = 3; // Maximum scholarships per provider
-  
-  // First pass: add the best scholarship from each provider
-  Object.values(byProvider).forEach(scholarships => {
-    if (scholarships.length > 0) {
-      diverseResults.push(scholarships[0]);
-    }
-  });
-  
-  // Second pass: fill in remaining scholarships up to provider limit
-  Object.values(byProvider).forEach(scholarships => {
-    if (scholarships.length > 1) {
-      const remaining = scholarships.slice(1, providerLimit);
-      diverseResults.push(...remaining);
-    }
-  });
-  
-  // Final sort by score
-  return diverseResults.sort((a, b) => b.score - a.score);
-}
-
-// Main function to get matched scholarships
-export async function getMatchedScholarships(userProfile: UserProfile): Promise<ScoredScholarship[]> {
   try {
     // Stage 1: Get initial matches from database
     const initialMatches = await getInitialScholarshipMatches(userProfile);
     
     if (initialMatches.length === 0) {
-      console.log('No initial matches found');
-      return [];
+      console.log('No matches found in database');
+      return { scholarships: [], categories: [], totalMatches: 0 };
     }
     
     // Stage 2: Score each scholarship
+    console.log('Scoring scholarships...');
     const scoredMatches: ScoredScholarship[] = initialMatches
       .map(scholarship => ({
         ...scholarship,
@@ -238,21 +130,63 @@ export async function getMatchedScholarships(userProfile: UserProfile): Promise<
       .filter(scholarship => scholarship.score > 0) // Remove any with score of 0
       .sort((a, b) => b.score - a.score);
     
-    // Stage 3: Apply business rules for diversity
-    const finalMatches = applyBusinessRules(scoredMatches);
+    console.log(`Found ${scoredMatches.length} scored matches`);
     
-    return finalMatches.slice(0, 20); // Return top 20 matches
+    // Stage 3: Apply business rules for diversity
+    const diversifiedMatches = diversifyResults(scoredMatches);
+    
+    // Stage 4: Categorize scholarships
+    const categories = categorizeScholarships(diversifiedMatches);
+    
+    // Create final result
+    const result: MatchResult = {
+      scholarships: diversifiedMatches,
+      categories,
+      totalMatches: diversifiedMatches.length
+    };
+    
+    // Cache the result
+    matchCache.set(userProfile, result);
+    
+    return result;
   } catch (error) {
     console.error('Error getting matched scholarships:', error);
-    return [];
+    return { scholarships: [], categories: [], totalMatches: 0 };
   }
 }
 
-// Function to update scholarship popularity when viewed or saved
+/**
+ * Update scholarship popularity (used when viewed or saved)
+ */
 export async function incrementScholarshipPopularity(scholarshipId: string): Promise<void> {
   try {
     await supabase.rpc('increment_scholarship_popularity', { scholarship_id: scholarshipId });
   } catch (error) {
     console.error('Error updating scholarship popularity:', error);
+  }
+}
+
+/**
+ * Get explanation for why a scholarship is a good match
+ */
+export async function getScholarshipMatchExplanation(
+  scholarship: ScoredScholarship, 
+  userProfile: UserProfile
+): Promise<string> {
+  // Import dynamically to avoid circular dependencies
+  const { getScholarshipExplanation } = await import('./openai');
+  
+  try {
+    console.log('Requesting explanation for scholarship:', scholarship.id);
+    const explanation = await getScholarshipExplanation(scholarship, userProfile);
+    
+    if (!explanation) {
+      throw new Error('No explanation generated');
+    }
+    
+    return explanation;
+  } catch (error) {
+    console.error('Error getting scholarship explanation:', error);
+    return `This ${scholarship.name} scholarship is a great match for your ${userProfile.education_level} level and ${userProfile.major} major. Your GPA of ${userProfile.gpa} meets their requirements, making you a competitive candidate.`;
   }
 }

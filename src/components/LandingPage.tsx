@@ -360,9 +360,9 @@ export function LandingPage() {
                 transition={{ duration: 0.5 }}
                 viewport={{ once: true }}
               >
-                <h2 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Ready to Find Your Perfect Scholarships?</h2>
+                <h2 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Ready to Match?</h2>
                 <p className="text-gray-700 dark:text-gray-300 max-w-2xl mx-auto mb-8">
-                  Complete our quick questionnaire and get matched with scholarships tailored to your profile.
+                  Complete our quick questionnaire and get scholarships tailored to your profile.
                 </p>
                 <Button
                   variant="gradient"

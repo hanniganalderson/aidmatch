@@ -1,48 +1,24 @@
 // src/hooks/useScholarshipMatching.ts
 import { useState, useEffect, useCallback } from 'react';
-import { getMatchedScholarships, incrementScholarshipPopularity } from '../lib/ScholarshipMatchingService';
-import { getScholarshipExplanation } from '../lib/openai';
-import type { ScoredScholarship, UserAnswers, UserProfile, MatchCategory, MatchResult } from '../types';
+import { getMatchedScholarships, getScholarshipMatchExplanation } from '../lib/ScholarshipMatchingService';
 import { supabase } from '../lib/supabase';
+import type { ScoredScholarship, UserAnswers, UserProfile, MatchResult, ScholarshipFilters } from '../types';
 
-// Cache implementation for scholarship results
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
-class ScholarshipCache {
-  private cache = new Map<string, { data: MatchResult; timestamp: number }>();
-
-  set(key: string, data: MatchResult): void {
-    this.cache.set(key, {
-      data,
-      timestamp: Date.now()
-    });
-  }
-
-  get(key: string): MatchResult | null {
-    const item = this.cache.get(key);
-    if (!item) return null;
-    
-    if (Date.now() - item.timestamp > CACHE_DURATION) {
-      this.cache.delete(key);
-      return null;
-    }
-    
-    return item.data;
-  }
-
-  clear(): void {
-    this.cache.clear();
-  }
+// Helper function to convert user answers to profile
+function getUserProfile(answers: UserAnswers): UserProfile {
+  return {
+    education_level: answers.education_level,
+    school: answers.school,
+    major: answers.major,
+    gpa: parseFloat(answers.gpa),
+    location: answers.location,
+    is_pell_eligible: answers.is_pell_eligible === 'Yes'
+  };
 }
 
-const scholarshipCache = new ScholarshipCache();
-
-// Helper function to create a cache key from user profile
-function createCacheKey(userProfile: UserProfile): string {
-  return `${userProfile.education_level}|${userProfile.major}|${userProfile.gpa}|${userProfile.location}|${userProfile.is_pell_eligible}`;
-}
-
-// Hook to get matched scholarships
+/**
+ * Hook for scholarship matching functionality
+ */
 export function useScholarshipMatching(answers: UserAnswers) {
   const [matchResult, setMatchResult] = useState<MatchResult>({
     scholarships: [],
@@ -51,108 +27,19 @@ export function useScholarshipMatching(answers: UserAnswers) {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [explanationLoading, setExplanationLoading] = useState<Record<string, boolean>>({});
 
-  // Convert user answers to profile
-  const getUserProfile = useCallback((answers: UserAnswers): UserProfile => {
-    return {
-      education_level: answers.education_level,
-      school: answers.school,
-      major: answers.major,
-      gpa: parseFloat(answers.gpa),
-      location: answers.location,
-      is_pell_eligible: answers.is_pell_eligible === 'Yes'
-    };
-  }, []);
-
-  // Group scholarships into categories
-  const categorizeScholarships = useCallback((scholarships: ScoredScholarship[]): MatchCategory[] => {
-    // Create primary categories
-    const categories: MatchCategory[] = [
-      { name: 'Best Matches', count: 0, scholarships: [] },
-      { name: 'Local Scholarships', count: 0, scholarships: [] },
-      { name: 'Major-Specific', count: 0, scholarships: [] },
-      { name: 'Easiest to Apply', count: 0, scholarships: [] },
-      { name: 'Highest Amount', count: 0, scholarships: [] }
-    ];
-
-    // Assign scholarships to categories
-    scholarships.forEach(scholarship => {
-      // Best Matches: top 5 by score
-      if (scholarship.score >= 80) {
-        categories[0].scholarships.push(scholarship);
-      }
-
-      // Local Scholarships
-      if (scholarship.is_local || scholarship.state) {
-        categories[1].scholarships.push(scholarship);
-      }
-
-      // Major-Specific
-      if (scholarship.major) {
-        categories[2].scholarships.push(scholarship);
-      }
-
-      // Easiest to Apply: low competition
-      if (scholarship.competition_level === 'Low') {
-        categories[3].scholarships.push(scholarship);
-      }
-
-      // Highest Amount: sort by amount
-      categories[4].scholarships.push(scholarship);
-    });
-
-    // Sort each category appropriately
-    categories[0].scholarships.sort((a, b) => b.score - a.score);
-    categories[1].scholarships.sort((a, b) => b.score - a.score);
-    categories[2].scholarships.sort((a, b) => b.score - a.score);
-    categories[3].scholarships.sort((a, b) => (b.deadline ? new Date(b.deadline).getTime() : 0) - 
-                                            (a.deadline ? new Date(a.deadline).getTime() : 0));
-    categories[4].scholarships.sort((a, b) => b.amount - a.amount);
-
-    // Limit each category to 10 items and update counts
-    categories.forEach(category => {
-      category.scholarships = category.scholarships.slice(0, 10);
-      category.count = category.scholarships.length;
-    });
-
-    // Filter out empty categories
-    return categories.filter(category => category.count > 0);
-  }, []);
-
-  // Load scholarships
+  // Load scholarships based on user answers
   useEffect(() => {
-    const loadScholarships = async () => {
+    async function loadScholarships() {
       try {
         setLoading(true);
         setError(null);
 
         const userProfile = getUserProfile(answers);
-        const cacheKey = createCacheKey(userProfile);
         
-        // Check cache first
-        const cachedResult = scholarshipCache.get(cacheKey);
-        if (cachedResult) {
-          setMatchResult(cachedResult);
-          setLoading(false);
-          return;
-        }
-
         // Get matches from service
-        const scoredScholarships = await getMatchedScholarships(userProfile);
-        
-        // Create categories
-        const categories = categorizeScholarships(scoredScholarships);
-        
-        // Create final result
-        const result: MatchResult = {
-          scholarships: scoredScholarships,
-          categories,
-          totalMatches: scoredScholarships.length
-        };
-        
-        // Cache the result
-        scholarshipCache.set(cacheKey, result);
-        
+        const result = await getMatchedScholarships(userProfile);
         setMatchResult(result);
       } catch (err) {
         console.error('Error loading scholarships:', err);
@@ -160,21 +47,43 @@ export function useScholarshipMatching(answers: UserAnswers) {
       } finally {
         setLoading(false);
       }
-    };
+    }
 
-    loadScholarships();
-  }, [answers, getUserProfile, categorizeScholarships]);
+    if (answers.education_level && answers.major && answers.gpa) {
+      loadScholarships();
+    } else {
+      setLoading(false);
+      setError('Please complete all required fields to find matching scholarships.');
+    }
+  }, [answers]);
 
   // Function to get explanation for a specific scholarship
   const getExplanation = useCallback(async (scholarship: ScoredScholarship) => {
-    if (scholarship.explanation) return scholarship.explanation;
+    // If explanation already exists, just return it
+    if (scholarship.explanation) {
+      console.log('Using existing explanation');
+      return scholarship.explanation;
+    }
     
     try {
-      const userProfile = getUserProfile(answers);
-      const explanation = await getScholarshipExplanation(scholarship, userProfile);
+      console.log('Setting explanation loading state for:', scholarship.id);
+      setExplanationLoading(prev => ({ ...prev, [scholarship.id]: true }));
       
-      // Update scholarship with explanation
+      const userProfile = getUserProfile(answers);
+      console.log('Requesting explanation for scholarship:', scholarship.id, 'with profile:', userProfile);
+      
+      const explanation = await getScholarshipMatchExplanation(scholarship, userProfile);
+      console.log('Received explanation, length:', explanation.length);
+      
+      if (!explanation || explanation.length < 10) {
+        throw new Error('Invalid explanation received');
+      }
+      
+      // Update scholarship with explanation in state
       setMatchResult(prev => {
+        console.log('Updating matchResult with new explanation');
+        
+        // Update in main scholarships array
         const updatedScholarships = prev.scholarships.map(s => 
           s.id === scholarship.id ? { ...s, explanation } : s
         );
@@ -194,42 +103,199 @@ export function useScholarshipMatching(answers: UserAnswers) {
         };
       });
       
-      // Update popularity
-      incrementScholarshipPopularity(scholarship.id);
-      
       return explanation;
     } catch (err) {
       console.error('Error getting explanation:', err);
-      return 'Unable to generate explanation at this time.';
+      
+      // Create fallback explanation
+      const fallbackExplanation = `This ${scholarship.name} scholarship is a strong match for your profile. With your GPA of ${answers.gpa} in ${answers.major}, you're well-positioned to apply for this ${scholarship.amount.toLocaleString()} scholarship.`;
+      
+      // Update state with fallback explanation
+      setMatchResult(prev => {
+        const updatedScholarships = prev.scholarships.map(s => 
+          s.id === scholarship.id ? { ...s, explanation: fallbackExplanation } : s
+        );
+        
+        const updatedCategories = prev.categories.map(category => ({
+          ...category,
+          scholarships: category.scholarships.map(s => 
+            s.id === scholarship.id ? { ...s, explanation: fallbackExplanation } : s
+          )
+        }));
+        
+        return {
+          ...prev,
+          scholarships: updatedScholarships,
+          categories: updatedCategories
+        };
+      });
+      
+      return fallbackExplanation;
+    } finally {
+      console.log('Clearing explanation loading state for:', scholarship.id);
+      setExplanationLoading(prev => ({ ...prev, [scholarship.id]: false }));
     }
-  }, [answers, getUserProfile]);
+  }, [answers]);
+
+  // Function to apply filters to scholarships
+  const filterScholarships = useCallback((
+    scholarships: ScoredScholarship[], 
+    filters: ScholarshipFilters,
+    searchTerm?: string
+  ): ScoredScholarship[] => {
+    return scholarships.filter(scholarship => {
+      // Apply search filter if term exists
+      if (searchTerm && searchTerm.trim() !== '') {
+        const term = searchTerm.toLowerCase();
+        const nameMatch = scholarship.name.toLowerCase().includes(term);
+        const providerMatch = scholarship.provider.toLowerCase().includes(term);
+        const majorMatch = scholarship.major?.toLowerCase().includes(term);
+        const requirementsMatch = scholarship.requirements?.toLowerCase().includes(term);
+        
+        if (!(nameMatch || providerMatch || majorMatch || requirementsMatch)) {
+          return false;
+        }
+      }
+      
+      // Apply amount filter
+      if (scholarship.amount < filters.minAmount || scholarship.amount > filters.maxAmount) {
+        return false;
+      }
+      
+      // Apply competition level filter
+      if (filters.competition.length > 0 && 
+          !filters.competition.includes(scholarship.competition_level)) {
+        return false;
+      }
+      
+      // Apply geographic scope filter
+      if (filters.scope && filters.scope.length > 0) {
+        const isLocal = scholarship.is_local || (scholarship.state && !scholarship.national);
+        const isNational = scholarship.national && !scholarship.is_local;
+        
+        const matchesScope = (
+          (filters.scope.includes('Local') && isLocal) ||
+          (filters.scope.includes('National') && isNational) ||
+          (filters.scope.includes('State') && scholarship.state) ||
+          (filters.scope.includes('International') && scholarship.national)
+        );
+        
+        if (!matchesScope) {
+          return false;
+        }
+      }
+      
+      // Apply deadline filter
+      if (filters.deadline) {
+        if (!scholarship.deadline) return false;
+        
+        const deadlineDate = new Date(scholarship.deadline);
+        const today = new Date();
+        const daysUntil = Math.ceil((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        
+        const daysFilter = parseInt(filters.deadline);
+        if (daysUntil > daysFilter) {
+          return false;
+        }
+      }
+      
+      // Apply education level filter
+      if (filters.educationLevel && filters.educationLevel.length > 0) {
+        if (!scholarship.education_level) return false;
+        
+        const hasMatchingLevel = scholarship.education_level.some(level => 
+          filters.educationLevel.includes(level)
+        );
+        
+        if (!hasMatchingLevel) {
+          return false;
+        }
+      }
+      
+      // Apply major filter
+      if (filters.major && scholarship.major !== filters.major) {
+        return false;
+      }
+      
+      // Apply need-based filter
+      if (filters.needBased !== null && scholarship.is_need_based !== undefined) {
+        if (scholarship.is_need_based !== filters.needBased) {
+          return false;
+        }
+      }
+      
+      // Apply essay requirement filter
+      if (filters.essayRequired !== null && scholarship.essay_required !== undefined) {
+        if (scholarship.essay_required !== filters.essayRequired) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  }, []);
+
+  // Function to sort scholarships
+  const sortScholarships = useCallback((
+    scholarships: ScoredScholarship[], 
+    sortBy: string
+  ): ScoredScholarship[] => {
+    const sorted = [...scholarships];
+    
+    switch (sortBy) {
+      case 'deadline':
+        return sorted.sort((a, b) => {
+          if (!a.deadline) return 1;
+          if (!b.deadline) return -1;
+          return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+        });
+      case 'amount':
+        return sorted.sort((a, b) => b.amount - a.amount);
+      case 'competition':
+        return sorted.sort((a, b) => {
+          const competitionOrder = { 'Low': 0, 'Medium': 1, 'High': 2 };
+          return competitionOrder[a.competition_level] - competitionOrder[b.competition_level];
+        });
+      case 'match':
+      default:
+        return sorted.sort((a, b) => b.score - a.score);
+    }
+  }, []);
 
   return {
     matchResult,
     loading,
     error,
-    getExplanation
+    getExplanation,
+    explanationLoading,
+    filterScholarships,
+    sortScholarships
   };
 }
 
-// Hook to save scholarships and track them
+/**
+ * Hook to manage saved scholarships
+ */
 export function useSavedScholarships(userId?: string) {
   const [savedScholarships, setSavedScholarships] = useState<ScoredScholarship[]>([]);
   const [savedIds, setSavedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [savingState, setSavingState] = useState<Record<string, boolean>>({});
 
-  // Load saved scholarships for user
+  // Load saved scholarships
   useEffect(() => {
-    const loadSavedScholarships = async () => {
-      if (!userId) {
-        setLoading(false);
-        return;
-      }
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
 
+    const loadSavedScholarships = async () => {
       try {
         setLoading(true);
+        setError(null);
         
+        // Get saved scholarship IDs and data
         const { data, error } = await supabase
           .from('saved_scholarships')
           .select(`
@@ -240,18 +306,22 @@ export function useSavedScholarships(userId?: string) {
 
         if (error) throw error;
         
-        if (data) {
-          const scholarshipsData = data.map((item: { scholarships: ScoredScholarship }) => ({
-            ...item.scholarships,
-            score: 100 // Default perfect score for saved items
+        if (data && data.length > 0) {
+          // Extract scholarship data and add scores
+          const scholarships = data.map(item => ({
+            ...(item.scholarships as Scholarship),
+            score: 100 // Default score for saved items
           }));
           
-          setSavedScholarships(scholarshipsData as ScoredScholarship[]);
-          setSavedIds(data.map((item: { scholarship_id: string }) => item.scholarship_id));
+          setSavedScholarships(scholarships);
+          setSavedIds(data.map(item => item.scholarship_id));
+        } else {
+          setSavedScholarships([]);
+          setSavedIds([]);
         }
       } catch (err) {
         console.error('Error loading saved scholarships:', err);
-        setError('Failed to load your saved scholarships.');
+        setError('Failed to load saved scholarships');
       } finally {
         setLoading(false);
       }
@@ -262,26 +332,24 @@ export function useSavedScholarships(userId?: string) {
 
   // Toggle saving a scholarship
   const toggleSave = useCallback(async (scholarship: ScoredScholarship) => {
-    // If no user ID, we still want to update the UI state for the current session
-    // This allows the save button to work even when not logged in
-    if (!userId) {
-      if (savedIds.includes(scholarship.id)) {
-        // Remove from saved (client-side only)
-        setSavedIds(prev => prev.filter(id => id !== scholarship.id));
-        setSavedScholarships(prev => prev.filter(s => s.id !== scholarship.id));
-      } else {
-        // Add to saved (client-side only)
-        setSavedIds(prev => [...prev, scholarship.id]);
-        setSavedScholarships(prev => [...prev, { ...scholarship, score: 100 }]);
-        
-        // Update popularity
-        incrementScholarshipPopularity(scholarship.id);
-      }
-      return true;
-    }
-
+    setSavingState(prev => ({ ...prev, [scholarship.id]: true }));
+    
     try {
-      if (savedIds.includes(scholarship.id)) {
+      const isSaved = savedIds.includes(scholarship.id);
+      
+      if (!userId) {
+        // Client-side only for non-logged in users
+        if (isSaved) {
+          setSavedIds(prev => prev.filter(id => id !== scholarship.id));
+          setSavedScholarships(prev => prev.filter(s => s.id !== scholarship.id));
+        } else {
+          setSavedIds(prev => [...prev, scholarship.id]);
+          setSavedScholarships(prev => [...prev, { ...scholarship, score: 100 }]);
+        }
+        return true;
+      }
+      
+      if (isSaved) {
         // Remove from saved
         const { error } = await supabase
           .from('saved_scholarships')
@@ -307,17 +375,19 @@ export function useSavedScholarships(userId?: string) {
         
         setSavedIds(prev => [...prev, scholarship.id]);
         setSavedScholarships(prev => [...prev, { ...scholarship, score: 100 }]);
-        
-        // Update popularity
-        incrementScholarshipPopularity(scholarship.id);
       }
+      
       return true;
     } catch (err) {
       console.error('Error toggling scholarship save:', err);
-      setError('Failed to update saved scholarships.');
       return false;
+    } finally {
+      setSavingState(prev => ({ ...prev, [scholarship.id]: false }));
     }
   }, [userId, savedIds]);
+
+  // Check if a scholarship is saved
+  const isSaved = useCallback((id: string) => savedIds.includes(id), [savedIds]);
 
   return {
     savedScholarships,
@@ -325,6 +395,7 @@ export function useSavedScholarships(userId?: string) {
     loading,
     error,
     toggleSave,
-    isSaved: useCallback((id: string) => savedIds.includes(id), [savedIds])
+    isSaved,
+    isSaving: savingState
   };
 }

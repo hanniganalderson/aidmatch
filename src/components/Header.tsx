@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  GraduationCap, Settings, LayoutDashboard, Menu, X, Moon, Sun, User, LogOut
-} from 'lucide-react';
+import { Settings, LayoutDashboard, Menu, X, Moon, Sun, User, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -15,28 +13,24 @@ export function Header() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  // Track scroll position to add background to header when scrolled
+  // Update header styling on scroll
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
-    };
-    
+    const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Close mobile menu when location changes
+  // Close mobile menu on route change
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [location]);
 
-  // Main navigation items - simplified
   const navItems = [
     { label: 'Match', href: '/questionnaire', description: 'Find scholarships' },
     { label: 'About', href: '/about', description: 'About AidMatch' },
   ];
 
-  // Animation variants
+  // Animation variants for menus
   const menuAnimation = {
     hidden: { opacity: 0, y: -20 },
     visible: { opacity: 1, y: 0 },
@@ -44,32 +38,78 @@ export function Header() {
   };
 
   return (
-    <header 
+    <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled 
-          ? 'py-2 bg-white/90 dark:bg-surface-dark-200/90 shadow-md backdrop-blur-md border-b border-gray-200/50 dark:border-gray-800/50' 
-          : 'py-4'
+          ? 'py-2 bg-gray-950 text-white shadow-md backdrop-blur-md border-b border-gray-800'
+          : 'py-4 bg-gray-950 text-white'
       }`}
     >
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <motion.div 
-              className="w-10 h-10 bg-gradient-green rounded-lg flex items-center justify-center shadow-md"
+          {/* Refined Logo */}
+          <Link to="/" className="flex items-center gap-3">
+            <motion.div
+              className="w-9 h-9 relative"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <GraduationCap className="w-6 h-6 text-white" />
+              {/* Improved graduation cap with properly oriented dollar sign */}
+              <svg 
+                viewBox="0 0 36 36" 
+                className="w-full h-full" 
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <defs>
+                  <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#10B981" /> {/* Primary green */}
+                    <stop offset="100%" stopColor="#0EA5E9" /> {/* Blue accent */}
+                  </linearGradient>
+                </defs>
+                
+                {/* Improved graduation cap shape with smoother edges */}
+                <path 
+                  d="M18,4 L4,12 L18,20 L32,12 L18,4 Z" 
+                  fill="url(#logoGradient)"
+                />
+                
+                {/* Cap bottom */}
+                <path 
+                  d="M25,12 L25,22 C25,24.5 22,27 18,27 C14,27 11,24.5 11,22 L11,12"
+                  fill="url(#logoGradient)"
+                  strokeLinejoin="round"
+                />
+                
+                {/* Tassel */}
+                <path 
+                  d="M25,12 C27,14.5 27,19 25,22" 
+                  stroke="#0EA5E9" 
+                  strokeWidth="1.5" 
+                  fill="none" 
+                  strokeLinecap="round"
+                />
+                
+                {/* Dollar sign (properly oriented) */}
+                <path 
+                  d="M18,11 L18,19 M15.5,13 C15.5,11.5 20.5,11.5 20.5,13 C20.5,15 15.5,15 15.5,17 C15.5,18.5 20.5,18.5 20.5,17" 
+                  stroke="white" 
+                  strokeWidth="2" 
+                  strokeLinecap="round"
+                  fill="none"
+                />
+              </svg>
             </motion.div>
-            <motion.h1 
-              className="text-xl font-bold text-gray-900 dark:text-white"
-              initial={{ opacity: 0, x: -5 }}
+            
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 }}
+              transition={{ delay: 0.15 }}
             >
-              AidMatch
-            </motion.h1>
+              <h1 className="text-2xl font-bold tracking-tight text-white">
+                AidMatch
+              </h1>
+            </motion.div>
           </Link>
 
           {/* Desktop Navigation */}
@@ -80,14 +120,15 @@ export function Header() {
                   key={item.href}
                   to={item.href}
                   className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    location.pathname === item.href || location.pathname.startsWith(item.href + '/')
-                      ? 'text-primary-600 dark:text-primary-400'
-                      : 'text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50'
+                    location.pathname === item.href ||
+                    location.pathname.startsWith(item.href + '/')
+                      ? 'text-primary-400'
+                      : 'text-gray-300 hover:text-primary-400 hover:bg-gray-800/50'
                   }`}
                 >
                   {location.pathname === item.href && (
                     <motion.span
-                      className="absolute inset-0 rounded-lg bg-primary-100/50 dark:bg-primary-900/20 -z-10"
+                      className="absolute inset-0 rounded-lg bg-primary-900/20 -z-10"
                       layoutId="activeNav"
                       transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
                     />
@@ -97,42 +138,47 @@ export function Header() {
               ))}
             </nav>
 
-            {/* Dashboard Button */}
             <Link
               to="/dashboard"
-              className="p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="p-2 rounded-lg text-gray-300 hover:text-primary-400 hover:bg-gray-800 transition-colors"
               aria-label="Dashboard"
             >
               <LayoutDashboard className="w-5 h-5" />
             </Link>
 
-            {/* Theme Toggle */}
             <button 
-              onClick={() => toggleTheme()}
-              className="p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              onClick={toggleTheme}
+              className="p-2 rounded-lg text-gray-300 hover:text-primary-400 hover:bg-gray-800 transition-colors"
               aria-label="Toggle theme"
             >
               {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
 
-            {/* Settings (Always visible) */}
             <Link
               to="/settings"
-              className="p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="p-2 rounded-lg text-gray-300 hover:text-primary-400 hover:bg-gray-800 transition-colors"
               aria-label="Settings"
             >
               <Settings className="w-5 h-5" />
             </Link>
 
-            {/* User Menu */}
             {user ? (
               <div className="relative">
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center gap-2 ml-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                  className="flex items-center gap-2 ml-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors"
                 >
-                  <User className="w-5 h-5" />
-                  <span className="text-sm font-medium">{user ? (typeof user === 'object' && user !== null && 'displayName' in user ? user.displayName as string : 'User') : 'User'}</span>
+                  <div className="w-6 h-6 rounded-full bg-primary-500 text-white flex items-center justify-center overflow-hidden text-sm font-medium">
+                    {user && typeof user === 'object' && 'displayName' in user && user.displayName 
+                      ? user.displayName.charAt(0).toUpperCase()
+                      : user && typeof user === 'object' && 'email' in user && typeof user.email === 'string'
+                        ? user.email.charAt(0).toUpperCase()
+                        : 'U'
+                    }
+                  </div>
+                  <span className="text-sm font-medium">
+                    {user && typeof user === 'object' && 'displayName' in user ? user.displayName : 'User'}
+                  </span>
                 </button>
 
                 <AnimatePresence>
@@ -142,12 +188,34 @@ export function Header() {
                       animate="visible"
                       exit="exit"
                       variants={menuAnimation}
-                      className="absolute right-0 mt-2 w-48 rounded-lg bg-white dark:bg-surface-dark-100 shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-50"
+                      className="absolute right-0 mt-2 w-60 rounded-lg bg-gray-900 shadow-lg border border-gray-700 overflow-hidden z-50"
                     >
+                      <div className="px-4 py-3 border-b border-gray-700">
+                        <p className="text-sm font-medium text-white">
+                          {user && typeof user === 'object' && 'displayName' in user ? user.displayName : 'User'}
+                        </p>
+                        <p className="text-xs text-gray-400 truncate">
+                          {user && typeof user === 'object' && 'email' in user ? user.email : ''}
+                        </p>
+                      </div>
                       <div className="py-1">
+                        <Link
+                          to="/dashboard"
+                          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-200 hover:bg-gray-700"
+                        >
+                          <LayoutDashboard className="w-4 h-4" />
+                          Dashboard
+                        </Link>
+                        <Link
+                          to="/settings"
+                          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-200 hover:bg-gray-700"
+                        >
+                          <Settings className="w-4 h-4" />
+                          Settings
+                        </Link>
                         <button
-                          onClick={() => signOut()}
-                          className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          onClick={signOut}
+                          className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-200 hover:bg-gray-700"
                         >
                           <LogOut className="w-4 h-4" />
                           Sign Out
@@ -161,13 +229,13 @@ export function Header() {
               <div className="flex items-center gap-2 ml-2">
                 <Link
                   to="/signin"
-                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-gray-200 hover:text-primary-400 transition-colors"
                 >
                   Sign In
                 </Link>
                 <Link
                   to="/signup"
-                  className="px-4 py-2 text-sm font-medium text-white bg-gradient-green hover:opacity-90 rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+                  className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-primary-500 to-primary-600 hover:opacity-90 rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
                 >
                   Create Account
                 </Link>
@@ -175,45 +243,32 @@ export function Header() {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Navigation */}
           <div className="flex items-center gap-2 md:hidden">
-            {/* Theme Toggle (Mobile) */}
             <button 
-              onClick={() => toggleTheme()}
-              className="p-2 rounded-full text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              onClick={toggleTheme}
+              className="p-2 rounded-full text-gray-300 hover:bg-gray-800 transition-colors"
               aria-label="Toggle theme"
             >
               {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
-
-            {/* Dashboard (Mobile) */}
             <Link
               to="/dashboard"
-              className="p-2 rounded-full text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="p-2 rounded-full text-gray-300 hover:bg-gray-800 transition-colors"
               aria-label="Dashboard"
             >
               <LayoutDashboard className="w-5 h-5" />
             </Link>
-
-            {/* Settings (Mobile) */}
-            <Link
-              to="/settings"
-              className="p-2 rounded-full text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors mr-1"
-              aria-label="Settings"
-            >
-              <Settings className="w-5 h-5" />
-            </Link>
-
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              className="p-2 rounded-lg bg-gray-800 text-gray-300 hover:bg-gray-700 transition-colors"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Mobile Menu Panel */}
         <AnimatePresence>
           {mobileMenuOpen && (
             <motion.div
@@ -223,40 +278,49 @@ export function Header() {
               transition={{ duration: 0.2 }}
               className="md:hidden overflow-hidden mt-2"
             >
-              <div className="py-2 space-y-1 bg-white dark:bg-surface-dark-100 rounded-lg shadow-lg">
+              <div className="py-2 space-y-1 bg-gray-900 rounded-lg shadow-lg">
                 {navItems.map((item) => (
                   <Link
                     key={item.href}
                     to={item.href}
                     className={`block px-4 py-2 text-sm font-medium ${
                       location.pathname === item.href
-                        ? 'text-primary-600 dark:text-primary-400 bg-gray-100 dark:bg-gray-700'
-                        : 'text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        ? 'text-primary-400 bg-gray-700'
+                        : 'text-gray-300 hover:text-primary-400 hover:bg-gray-700'
                     }`}
                   >
                     {item.label}
                   </Link>
                 ))}
-                
                 {user ? (
-                  <button
-                    onClick={() => signOut()}
-                    className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    Sign Out
-                  </button>
+                  <>
+                    <div className="px-4 py-3 border-t border-gray-700">
+                      <p className="text-sm font-medium text-white">
+                        {user && typeof user === 'object' && 'displayName' in user ? user.displayName : 'User'}
+                      </p>
+                      <p className="text-xs text-gray-400 truncate">
+                        {user && typeof user === 'object' && 'email' in user ? user.email : ''}
+                      </p>
+                    </div>
+                    <button
+                      onClick={signOut}
+                      className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-200 hover:bg-gray-700"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Sign Out
+                    </button>
+                  </>
                 ) : (
                   <>
                     <Link 
                       to="/signin"
-                      className="block px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      className="block px-4 py-2 text-sm font-medium text-gray-300 hover:text-primary-400 hover:bg-gray-700"
                     >
                       Sign In
                     </Link>
                     <Link 
                       to="/signup"
-                      className="block mx-4 mt-2 px-4 py-2 text-sm font-medium text-center text-white bg-gradient-green hover:opacity-90 rounded-lg transition-colors"
+                      className="block mx-4 mt-2 px-4 py-2 text-sm font-medium text-center text-white bg-gradient-to-r from-primary-500 to-primary-600 hover:opacity-90 rounded-lg transition-colors"
                     >
                       Create Account
                     </Link>

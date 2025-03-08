@@ -13,6 +13,9 @@ import { SavedScholarships } from './components/SavedScholarships';
 import { InputScholarship } from './components/InputScholarship';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { supabase } from './lib/supabase';
+import { Pricing } from './pages/Pricing';
+import { PrivacyPolicy } from './pages/PrivacyPolicy';
+import { TermsOfService } from './pages/TermsOfService';
 import type { UserAnswers } from './types';
 
 // Protected Route component
@@ -49,7 +52,10 @@ function AppContent() {
   // Load user answers from Supabase when user is available
   useEffect(() => {
     async function loadUserAnswers() {
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
       
       try {
         const { data, error } = await supabase
@@ -60,6 +66,7 @@ function AppContent() {
 
         if (error && error.code !== 'PGRST116') {
           console.error('Error loading user profile:', error);
+          setLoading(false);
           return;
         }
 
@@ -132,6 +139,9 @@ function AppContent() {
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/about" element={<About />} />
+        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
         
         {/* Protected routes */}
         <Route path="/settings" element={

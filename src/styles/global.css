@@ -70,3 +70,68 @@ h1 {
   font-size: 0.875rem;
   font-weight: 500;
 }
+/* Hide scrollbar but keep functionality */
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
+/* Custom scrollbar for elements that need minimal, elegant scrollbars */
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(3, 122, 88, 0.5) transparent;
+}
+
+.thin-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(3, 122, 88, 0.5);
+  border-radius: 6px;
+}
+
+/* Dark theme variants */
+.dark .thin-scrollbar {
+  scrollbar-color: rgba(16, 185, 129, 0.3) rgba(17, 24, 39, 0.3);
+}
+
+.dark .thin-scrollbar::-webkit-scrollbar-track {
+  background: rgba(17, 24, 39, 0.3);
+}
+
+.dark .thin-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(16, 185, 129, 0.3);
+}
+
+/* High-contrast scrollbar that only shows on hover */
+.hover-scrollbar {
+  overflow-y: auto;
+}
+
+.hover-scrollbar::-webkit-scrollbar {
+  width: 0;
+  transition: width 0.3s ease;
+}
+
+.hover-scrollbar:hover::-webkit-scrollbar {
+  width: 5px;
+}
+
+.hover-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.hover-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(16, 185, 129, 0.5);
+  border-radius: 10px;
+}

@@ -1,16 +1,29 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mail, Lock, ArrowRight, LogIn } from 'lucide-react';
+import { Mail, Lock, ArrowRight, LogIn, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export function SignIn() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { signIn, signInWithGoogle } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  // Check for OAuth errors in URL
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const error = searchParams.get('error');
+    const errorDescription = searchParams.get('error_description');
+    
+    if (error) {
+      setError(`Auth error: ${errorDescription || error}`);
+    }
+  }, [location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,9 +32,14 @@ export function SignIn() {
 
     try {
       await signIn(email, password);
-      navigate('/questionnaire');
+      navigate('/dashboard');
     } catch (err) {
-      setError('Failed to sign in. Please check your credentials.');
+      console.error('Sign in error:', err);
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Failed to sign in. Please check your credentials.');
+      }
     } finally {
       setLoading(false);
     }
@@ -29,11 +47,18 @@ export function SignIn() {
 
   const handleGoogleSignIn = async () => {
     setError(null);
+    setGoogleLoading(true);
     try {
       await signInWithGoogle();
-      // Redirect happens automatically
+      // Redirect happens automatically by Supabase
     } catch (err) {
-      setError('Failed to sign in with Google. Please try again.');
+      console.error('Google sign in error:', err);
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Failed to sign in with Google. Please try again.');
+      }
+      setGoogleLoading(false);
     }
   };
 
@@ -69,12 +94,23 @@ export function SignIn() {
       >
         <motion.div 
           variants={itemVariants}
-          className="bg-white dark:bg-[#171923]/60 backdrop-blur-sm p-8 rounded-lg border border-gray-200 dark:border-[#2A2D3A] shadow-xl"
+          className="bg-white dark:bg-gray-800/80 backdrop-blur-sm p-8 rounded-lg border border-gray-200 dark:border-gray-700 shadow-xl"
         >
           <div className="text-center mb-6">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Welcome Back</h2>
             <p className="text-gray-600 dark:text-gray-400 text-sm mt-2">Sign in to your AidMatch account</p>
           </div>
+          
+          {error && (
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800/30 flex items-start gap-2"
+            >
+              <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+              <span className="text-red-600 dark:text-red-400 text-sm">{error}</span>
+            </motion.div>
+          )}
           
           <form onSubmit={handleSubmit} className="space-y-6">
             <motion.div variants={itemVariants}>
@@ -88,7 +124,7 @@ export function SignIn() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="input-field pl-10"
+                  className="w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-primary-500 dark:focus:border-primary-400 transition-colors"
                   placeholder="Enter your email"
                   required
                 />
@@ -100,7 +136,7 @@ export function SignIn() {
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Password
                 </label>
-                <Link to="/forgot-password" className="text-sm text-blue-500 hover:text-blue-400">
+                <Link to="/forgot-password" className="text-sm text-primary-500 hover:text-primary-400 transition-colors">
                   Forgot password?
                 </Link>
               </div>
@@ -111,22 +147,12 @@ export function SignIn() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="input-field pl-10"
+                  className="w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-primary-500 dark:focus:border-primary-400 transition-colors"
                   placeholder="Enter your password"
                   required
                 />
               </div>
             </motion.div>
-
-            {error && (
-              <motion.div 
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-red-500 text-sm bg-red-500/10 p-3 rounded-lg border border-red-500/20"
-              >
-                {error}
-              </motion.div>
-            )}
 
             <motion.button
               variants={itemVariants}
@@ -134,7 +160,7 @@ export function SignIn() {
               whileTap={{ scale: 0.98 }}
               type="submit"
               disabled={loading}
-              className="w-full btn-primary flex items-center justify-center space-x-2"
+              className="w-full py-3 px-4 bg-gradient-to-r from-primary-600 to-primary-500 text-white rounded-lg hover:opacity-90 transition-all duration-200 shadow-md flex items-center justify-center space-x-2"
             >
               <span>Sign In</span>
               {loading ? (
@@ -151,7 +177,7 @@ export function SignIn() {
                 <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white dark:bg-[#171923] text-gray-500 dark:text-gray-400">
+                <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
                   Or continue with
                 </span>
               </div>
@@ -161,7 +187,8 @@ export function SignIn() {
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
-                className="w-full flex items-center justify-center gap-3 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-[#1A1E2A] hover:bg-gray-50 dark:hover:bg-[#222222] transition-colors"
+                disabled={googleLoading}
+                className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors relative"
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24">
                   <path
@@ -181,7 +208,14 @@ export function SignIn() {
                     fill="#EA4335"
                   />
                 </svg>
-                Sign in with Google
+                {googleLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-700 dark:border-white border-t-transparent mr-2" />
+                    Connecting...
+                  </>
+                ) : (
+                  "Sign in with Google"
+                )}
               </button>
             </div>
           </motion.div>
@@ -191,7 +225,7 @@ export function SignIn() {
               Don't have an account?{' '}
               <Link
                 to="/signup"
-                className="text-blue-500 hover:text-blue-400 transition-colors font-medium"
+                className="text-primary-500 hover:text-primary-400 transition-colors font-medium"
               >
                 Sign up
               </Link>

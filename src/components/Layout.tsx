@@ -11,6 +11,11 @@ interface LayoutProps {
 function LayoutContent({ children }: LayoutProps) {
   const { theme } = useTheme();
   
+  // Reset scroll position on navigation
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [children]);
+  
   // Smooth scrolling
   useEffect(() => {
     document.documentElement.style.scrollBehavior = 'smooth';
@@ -54,18 +59,16 @@ function LayoutContent({ children }: LayoutProps) {
       {/* Main content */}
       <Header />
       
-      <AnimatePresence mode="wait">
-        <motion.main 
-          key={window.location.pathname}
-          className="flex-grow relative z-10 pt-16"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.3 }}
-        >
-          {children}
-        </motion.main>
-      </AnimatePresence>
+      <motion.main 
+        key={window.location.pathname}
+        className="flex-grow relative z-10 pt-20" // Keep this consistent regardless of header state
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        transition={{ duration: 0.3 }}
+      >
+        {children}
+      </motion.main>
       
       <Footer />
     </div>

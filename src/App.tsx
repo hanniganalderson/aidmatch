@@ -12,10 +12,11 @@ import { Settings } from './components/Settings';
 import { SavedScholarships } from './components/SavedScholarships';
 import { InputScholarship } from './components/InputScholarship';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { supabase } from './lib/supabase';
+import { supabase } from './lib/supabase'; // Import supabase
 import { Pricing } from './pages/Pricing';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { TermsOfService } from './pages/TermsOfService';
+import { clearOAuthErrorParams, processHashErrors } from './lib/auth-utils';
 import type { UserAnswers } from './types';
 
 // Protected Route component
@@ -49,6 +50,17 @@ function AppContent() {
   });
   const [loading, setLoading] = useState(true);
 
+  // Process any OAuth errors in the URL hash
+  useEffect(() => {
+    const hashError = processHashErrors();
+    if (hashError) {
+      console.error('OAuth error detected:', hashError);
+    }
+    
+    // Clear any OAuth error params from the URL
+    clearOAuthErrorParams();
+  }, []);
+
   // Load user answers from Supabase when user is available
   useEffect(() => {
     async function loadUserAnswers() {
@@ -58,6 +70,9 @@ function AppContent() {
       }
       
       try {
+        // Customized logging for debugging
+        console.log('Loading user profile for:', user.id);
+        
         const { data, error } = await supabase
           .from('user_profiles')
           .select('*')
@@ -71,6 +86,7 @@ function AppContent() {
         }
 
         if (data) {
+          console.log('User profile loaded successfully');
           // Update answers state with data from database
           setAnswers({
             education_level: data.education_level || '',
@@ -80,6 +96,8 @@ function AppContent() {
             is_pell_eligible: data.is_pell_eligible || '',
             location: data.location || ''
           });
+        } else {
+          console.log('No user profile found, using defaults');
         }
       } catch (err) {
         console.error('Error fetching user answers:', err);
@@ -175,7 +193,6 @@ function AppContent() {
         <Route path="/results" element={
           <Results 
             answers={answers} 
-            navigate={(path) => window.location.href = path} 
           />
         } />
       </Routes>

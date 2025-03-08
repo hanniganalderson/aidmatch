@@ -1,3 +1,4 @@
+// src/lib/supabase.ts - Current configuration
 import { createClient } from '@supabase/supabase-js';
 
 // Get environment variables

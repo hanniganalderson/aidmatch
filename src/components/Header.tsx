@@ -6,12 +6,22 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 
 export function Header() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, getUserDisplayName } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [displayName, setDisplayName] = useState('');
+
+  // Update displayName when user changes
+  useEffect(() => {
+    if (user) {
+      setDisplayName(getUserDisplayName());
+    } else {
+      setDisplayName('');
+    }
+  }, [user, getUserDisplayName]);
 
   // Update header styling on scroll
   useEffect(() => {
@@ -37,6 +47,16 @@ export function Header() {
     exit: { opacity: 0, y: -10 }
   };
 
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      // Close the user menu after signing out
+      setUserMenuOpen(false);
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -47,14 +67,14 @@ export function Header() {
     >
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between">
-          {/* Refined Logo */}
+          {/* Logo */}
           <Link to="/" className="flex items-center gap-3">
             <motion.div
               className="w-9 h-9 relative"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              {/* Improved graduation cap with properly oriented dollar sign */}
+              {/* Graduation cap with dollar sign */}
               <svg 
                 viewBox="0 0 36 36" 
                 className="w-full h-full" 
@@ -68,7 +88,7 @@ export function Header() {
                   </linearGradient>
                 </defs>
                 
-                {/* Improved graduation cap shape with smoother edges */}
+                {/* Graduation cap shape */}
                 <path 
                   d="M18,4 L4,12 L18,20 L32,12 L18,4 Z" 
                   fill="url(#logoGradient)"
@@ -90,7 +110,7 @@ export function Header() {
                   strokeLinecap="round"
                 />
                 
-                {/* Dollar sign (properly oriented) */}
+                {/* Dollar sign */}
                 <path 
                   d="M18,11 L18,19 M15.5,13 C15.5,11.5 20.5,11.5 20.5,13 C20.5,15 15.5,15 15.5,17 C15.5,18.5 20.5,18.5 20.5,17" 
                   stroke="white" 
@@ -169,15 +189,10 @@ export function Header() {
                   className="flex items-center gap-2 ml-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors"
                 >
                   <div className="w-6 h-6 rounded-full bg-primary-500 text-white flex items-center justify-center overflow-hidden text-sm font-medium">
-                    {user && typeof user === 'object' && 'displayName' in user && user.displayName 
-                      ? user.displayName.charAt(0).toUpperCase()
-                      : user && typeof user === 'object' && 'email' in user && typeof user.email === 'string'
-                        ? user.email.charAt(0).toUpperCase()
-                        : 'U'
-                    }
+                    {displayName ? displayName.charAt(0).toUpperCase() : 'U'}
                   </div>
                   <span className="text-sm font-medium">
-                    {user && typeof user === 'object' && 'displayName' in user ? user.displayName : 'User'}
+                    {displayName || 'User'}
                   </span>
                 </button>
 
@@ -192,10 +207,10 @@ export function Header() {
                     >
                       <div className="px-4 py-3 border-b border-gray-700">
                         <p className="text-sm font-medium text-white">
-                          {user && typeof user === 'object' && 'displayName' in user ? user.displayName : 'User'}
+                          Hi, {displayName || 'User'}
                         </p>
                         <p className="text-xs text-gray-400 truncate">
-                          {user && typeof user === 'object' && 'email' in user ? user.email : ''}
+                          {user?.email || ''}
                         </p>
                       </div>
                       <div className="py-1">
@@ -214,7 +229,7 @@ export function Header() {
                           Settings
                         </Link>
                         <button
-                          onClick={signOut}
+                          onClick={handleSignOut}
                           className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-200 hover:bg-gray-700"
                         >
                           <LogOut className="w-4 h-4" />
@@ -296,14 +311,14 @@ export function Header() {
                   <>
                     <div className="px-4 py-3 border-t border-gray-700">
                       <p className="text-sm font-medium text-white">
-                        {user && typeof user === 'object' && 'displayName' in user ? user.displayName : 'User'}
+                        Hi, {displayName || 'User'}
                       </p>
                       <p className="text-xs text-gray-400 truncate">
-                        {user && typeof user === 'object' && 'email' in user ? user.email : ''}
+                        {user.email || ''}
                       </p>
                     </div>
                     <button
-                      onClick={signOut}
+                      onClick={handleSignOut}
                       className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-200 hover:bg-gray-700"
                     >
                       <LogOut className="w-4 h-4" />

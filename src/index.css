@@ -1,0 +1,206 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-bg-primary: 248 250 252;
+    --color-bg-secondary: 241 245 249;
+    --color-text-primary: 15 23 42;
+    --color-text-secondary: 71 85 105;
+  }
+
+  .dark {
+    --color-bg-primary: 23 25 35;
+    --color-bg-secondary: 19 21 31;
+    --color-text-primary: 248 250 252;
+    --color-text-secondary: 226 232 240;
+  }
+
+  html {
+    @apply bg-surface-light-50 dark:bg-surface-dark-100 text-gray-900 dark:text-gray-100 antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  body {
+    @apply min-h-screen;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-medium tracking-tight text-gray-900 dark:text-gray-100;
+  }
+
+  h1 {
+    @apply text-3xl md:text-4xl lg:text-5xl;
+    line-height: 1.1;
+  }
+
+  h2 {
+    @apply text-2xl md:text-3xl;
+    line-height: 1.2;
+  }
+
+  p {
+    @apply text-gray-700 dark:text-gray-200 leading-relaxed;
+  }
+}
+
+@layer components {
+  .input-field {
+    @apply w-full px-4 py-3 rounded-lg 
+           bg-white dark:bg-surface-dark-100/50 
+           border-2 border-gray-200 dark:border-surface-dark-50/20 
+           text-gray-900 dark:text-gray-100 
+           placeholder-gray-500 dark:placeholder-gray-400
+           focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500
+           hover:border-primary-400/30 dark:hover:border-primary-400/30
+           transition-all duration-200 backdrop-blur-sm
+           shadow-sm;
+  }
+
+  .btn-primary {
+    @apply px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-500 
+           text-white rounded-lg
+           hover:opacity-90 hover:shadow-premium
+           focus:outline-none focus:ring-2 focus:ring-primary-500/50 
+           active:scale-[0.98]
+           disabled:opacity-50 disabled:cursor-not-allowed
+           transition-all duration-200 flex items-center justify-center gap-2;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 bg-white dark:bg-surface-dark-100 
+           text-gray-900 dark:text-gray-100 rounded-lg
+           border-2 border-gray-200 dark:border-surface-dark-50/20
+           hover:border-primary-500/50 dark:hover:border-primary-500/50 
+           hover:shadow-premium
+           focus:outline-none focus:ring-2 focus:ring-primary-500/50
+           active:scale-[0.98]
+           disabled:opacity-50 disabled:cursor-not-allowed
+           transition-all duration-200 flex items-center justify-center gap-2;
+  }
+
+  .btn-outline {
+    @apply px-6 py-3 bg-transparent
+           text-gray-900 dark:text-gray-100 rounded-lg
+           border-2 border-gray-200 dark:border-gray-700
+           hover:border-primary-500/50 dark:hover:border-primary-500/50 
+           hover:shadow-sm
+           focus:outline-none focus:ring-2 focus:ring-primary-500/50
+           active:scale-[0.98]
+           disabled:opacity-50 disabled:cursor-not-allowed
+           transition-all duration-200 flex items-center justify-center gap-2;
+  }
+
+  .card {
+    @apply bg-white/80 dark:bg-surface-dark-100/80 
+           backdrop-blur-sm rounded-lg 
+           border-2 border-gray-200 dark:border-surface-dark-50/20
+           hover:border-primary-500/30 dark:hover:border-primary-500/30 
+           hover:shadow-premium
+           transition-all duration-200;
+  }
+
+  .glass-effect {
+    @apply backdrop-blur-xl 
+           bg-white/90 dark:bg-surface-dark-100/90 
+           border-2 border-gray-200/50 dark:border-surface-dark-50/20 
+           rounded-lg;
+  }
+  
+  .btn-accent {
+    @apply px-6 py-3 bg-gradient-to-r from-accent-600 to-accent-500 
+           text-white rounded-lg
+           hover:opacity-90 hover:shadow-premium
+           focus:outline-none focus:ring-2 focus:ring-accent-500/50 
+           active:scale-[0.98]
+           disabled:opacity-50 disabled:cursor-not-allowed
+           transition-all duration-200 flex items-center justify-center gap-2;
+  }
+
+  .feature-card {
+    @apply p-6 rounded-lg 
+           border-2 border-gray-200 dark:border-surface-dark-50/20 
+           bg-white/60 dark:bg-surface-dark-100/60 
+           backdrop-blur-sm
+           hover:border-primary-500/30 dark:hover:border-primary-500/30 
+           hover:shadow-premium
+           transition-all duration-200;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary-500 to-accent-500 
+           bg-clip-text text-transparent;
+  }
+
+  .scholarship-card {
+    @apply relative bg-white/90 dark:bg-surface-dark-100/90 
+           backdrop-blur-sm rounded-xl 
+           border-2 border-gray-200 dark:border-surface-dark-50/20
+           hover:border-primary-500/30 dark:hover:border-primary-500/30 
+           hover:shadow-premium p-6
+           transition-all duration-200;
+  }
+}
+
+/* Background Elements */
+.bg-grid {
+  background-image: url('/grid.svg');
+  background-repeat: repeat;
+  background-size: 50px 50px;
+  background-position: center;
+}
+
+.bg-noise {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+.bg-dots {
+  background-image: radial-gradient(circle, rgba(59, 130, 246, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.bg-waves {
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.03) 0%, rgba(16, 185, 129, 0.03) 100%);
+  background-size: 100% 100%;
+  position: relative;
+}
+
+.bg-waves::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='waves' width='100' height='20' patternUnits='userSpaceOnUse'%3E%3Cpath d='M0 5 Q 25 0, 50 5 T 100 5' stroke='rgba(59, 130, 246, 0.1)' fill='none' stroke-width='0.5'/%3E%3Cpath d='M0 10 Q 25 5, 50 10 T 100 10' stroke='rgba(16, 185, 129, 0.1)' fill='none' stroke-width='0.5'/%3E%3Cpath d='M0 15 Q 25 10, 50 15 T 100 15' stroke='rgba(59, 130, 246, 0.1)' fill='none' stroke-width='0.5'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23waves)'/%3E%3C/svg%3E");
+  opacity: 0.4;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  @apply w-2;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-surface-dark-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-surface-dark-50 rounded-full
+         hover:bg-gray-400 dark:hover:bg-surface-dark-50/80
+         transition-colors duration-200;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 640px) {
+  .btn-primary, .btn-secondary {
+    @apply w-full justify-center;
+  }
+
+  .input-field {
+    @apply px-4 py-3;
+  }
+}

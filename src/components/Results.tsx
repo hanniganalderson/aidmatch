@@ -1,4 +1,3 @@
-// Updated Results.tsx to work with the optimized ResultsFilters component
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Award, Search, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -18,13 +17,16 @@ interface ResultsProps {
 export function Results({ answers }: ResultsProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
+
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedScholarshipId, setExpandedScholarshipId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const itemsPerPage = 8;
   
-  // Define initial filters - including needBased and essayRequired
+  // Items displayed per page
+  const itemsPerPage = 8;
+
+  // **Initial filters** 
   const [filters, setFilters] = useState<ScholarshipFilters>({
     minAmount: 0,
     maxAmount: 100000,
@@ -39,7 +41,7 @@ export function Results({ answers }: ResultsProps) {
     essayRequired: null
   });
 
-  // Get scholarship data
+  // Hooks to fetch scholarship data
   const { 
     matchResult, 
     loading, 
@@ -49,28 +51,23 @@ export function Results({ answers }: ResultsProps) {
     filterScholarships,
     sortScholarships
   } = useScholarshipMatching(answers);
-  
-  // Get saved scholarships
+
   const {
     isSaved,
     toggleSave,
     isSaving
   } = useSavedScholarships(user?.id);
 
-  // Filter and sort scholarships
+  // Filtered scholarships state
   const [filteredScholarships, setFilteredScholarships] = useState<ScoredScholarship[]>([]);
-  
-  // Apply filters and sorting whenever dependencies change
+
+  // Update filtered scholarships when data, filters, or search changes
   useEffect(() => {
     if (matchResult.scholarships.length > 0) {
-      // Apply all filters through the filterScholarships function
       let results = filterScholarships(matchResult.scholarships, filters, searchTerm);
-      
-      // Then sort
       results = sortScholarships(results, filters.sortBy);
-      
       setFilteredScholarships(results);
-      setCurrentPage(1); // Reset to first page when filters change
+      setCurrentPage(1);
     }
   }, [matchResult, searchTerm, filters, filterScholarships, sortScholarships]);
 
@@ -81,7 +78,7 @@ export function Results({ answers }: ResultsProps) {
     currentPage * itemsPerPage
   );
 
-  // Reset filters function
+  // Reset filters to default
   const resetFilters = () => {
     setFilters({
       minAmount: 0,
@@ -99,39 +96,25 @@ export function Results({ answers }: ResultsProps) {
     setSearchTerm('');
   };
 
-  // Function to handle explanation
+  // Handle explanation expansion
   const handleExplain = async (scholarship: ScoredScholarship) => {
+    if (expandedScholarshipId === scholarship.id) {
+      // Collapse if same ID
+      setExpandedScholarshipId(null);
+      return;
+    }
     try {
-      // If already expanded, just collapse it
-      if (expandedScholarshipId === scholarship.id) {
-        console.log('Collapsing scholarship explanation:', scholarship.id);
-        setExpandedScholarshipId(null);
-        return;
-      }
-      
-      console.log('Requesting explanation for scholarship:', scholarship.id);
-      
-      // Request explanation even if we already have it (to handle potential nulls)
       const explanation = await getExplanation(scholarship);
-      
-      if (explanation) {
-        console.log('Explanation received, setting expanded scholarship ID:', scholarship.id);
-        setExpandedScholarshipId(scholarship.id);
-      } else {
-        console.error('No explanation returned for scholarship:', scholarship.id);
-      }
-    } catch (error) {
-      console.error('Error in handleExplain:', error);
+      if (explanation) setExpandedScholarshipId(scholarship.id);
+    } catch (err) {
+      console.error('Error in handleExplain:', err);
     }
   };
 
-  // Use intersection observer for animations
-  const [ref, inView] = useInView({
-    triggerOnce: true,
-    threshold: 0.1
-  });
+  // Intersection observer for fade-in
+  const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.1 });
 
-  // Get an array of majors from scholarships for the filter
+  // Collect a set of majors from scholarships
   const availableMajors = React.useMemo(() => {
     const majors = new Set<string>();
     matchResult.scholarships.forEach(s => {
@@ -160,11 +143,11 @@ export function Results({ answers }: ResultsProps) {
           
           <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
             Based on your profile, we've found {matchResult?.totalMatches || 0} opportunities 
-            that match your qualifications. Refine your search to find your perfect scholarship.
+            that match your qualifications. Adjust your filters below to refine your search.
           </p>
         </motion.div>
 
-        {/* ResultsFilters - now with categories integrated */}
+        {/* Results Filters */}
         <ResultsFilters
           filters={filters}
           setFilters={setFilters}
@@ -175,14 +158,16 @@ export function Results({ answers }: ResultsProps) {
           totalResults={filteredScholarships.length}
           resetFilters={resetFilters}
           majors={availableMajors}
-          categories={matchResult.categories}
+          categories={matchResult.categories} // If you want to keep recommended categories
         />
 
-        {/* Results */}
+        {/* Main results area */}
         {loading ? (
           <div className="text-center py-24">
             <div className="inline-block w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mb-4" />
-            <p className="text-gray-600 dark:text-gray-400">Finding your best financial aid matches...</p>
+            <p className="text-gray-600 dark:text-gray-400">
+              Finding your best financial aid matches...
+            </p>
           </div>
         ) : error ? (
           <div className="text-center py-12 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800/30 text-red-600 dark:text-red-400">
@@ -193,7 +178,9 @@ export function Results({ answers }: ResultsProps) {
             <div className="mx-auto w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
               <Search className="w-10 h-10 text-gray-400" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No matches found</h3>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              No matches found
+            </h3>
             <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto mb-6">
               {searchTerm 
                 ? "Try adjusting your search terms or filters to see more results." 
@@ -214,8 +201,8 @@ export function Results({ answers }: ResultsProps) {
                 key={scholarship.id}
                 scholarship={scholarship}
                 isSaved={isSaved(scholarship.id)}
-                onSave={async (scholarship) => {
-                  await toggleSave(scholarship);
+                onSave={async (sch) => {
+                  await toggleSave(sch);
                 }}
                 onExplain={() => handleExplain(scholarship)}
                 isExplaining={!!explanationLoading[scholarship.id]}
@@ -224,7 +211,7 @@ export function Results({ answers }: ResultsProps) {
                 index={index}
               />
             ))}
-            
+
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex justify-center mt-12">
@@ -240,19 +227,18 @@ export function Results({ answers }: ResultsProps) {
                   </Button>
                   
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    // Create a window of 5 pages around the current page
                     let pageNum;
                     if (totalPages <= 5) {
-                      // If 5 or fewer pages, show all
+                      // Show all pages if total <= 5
                       pageNum = i + 1;
                     } else if (currentPage <= 3) {
-                      // If near the start, show pages 1-5
+                      // Near start
                       pageNum = i + 1;
                     } else if (currentPage >= totalPages - 2) {
-                      // If near the end, show last 5 pages
+                      // Near end
                       pageNum = totalPages - 4 + i;
                     } else {
-                      // Otherwise show 2 before, current, and 2 after
+                      // Middle
                       pageNum = currentPage - 2 + i;
                     }
                     

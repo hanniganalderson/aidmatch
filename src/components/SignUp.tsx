@@ -38,10 +38,17 @@ export function SignUp() {
     }
 
     try {
-      // Save the name to metadata
-      await signUp(email, password);
+      // Create the user account with metadata including name
+      const options = {
+        data: { name },
+        emailRedirectTo: `${window.location.origin}/questionnaire`  // Redirect to questionnaire after email verification
+      };
       
-      // Redirect happens via email confirmation or automatically
+      const { error } = await signUp(email, password, options);
+      
+      if (error) throw error;
+      
+      // On successful signup, redirect to questionnaire
       navigate('/questionnaire');
     } catch (err) {
       console.error('Sign up error:', err);
@@ -59,7 +66,12 @@ export function SignUp() {
     setError(null);
     setGoogleLoading(true);
     try {
-      await signInWithGoogle();
+      // Specify the redirect URL to go to questionnaire after Google auth
+      const options = {
+        redirectTo: `${window.location.origin}/questionnaire`
+      };
+      
+      await signInWithGoogle(options);
       // Redirect happens automatically by Supabase
     } catch (err) {
       console.error('Google sign up error:', err);

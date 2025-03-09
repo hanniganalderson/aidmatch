@@ -91,7 +91,7 @@ export function Footer() {
           </div>
           
           <div>
-            <h3 className="font-medium mb-3 text-sm text-white">Updates on Scholarships</h3>
+            <h3 className="font-medium mb-3 text-sm text-white">Wanting updates?</h3>
             
             <AnimatePresence mode="wait">
               {subscribed ? (

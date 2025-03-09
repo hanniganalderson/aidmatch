@@ -161,35 +161,40 @@ function AppContent() {
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
         
-        {/* Protected routes */}
-        <Route path="/settings" element={
-          <ProtectedRoute>
-            <Settings />
-          </ProtectedRoute>
-        } />
-        <Route path="/saved-scholarships" element={
-          <ProtectedRoute>
-            <SavedScholarships />
-          </ProtectedRoute>
-        } />
-        <Route path="/input-scholarships" element={
-          <ProtectedRoute>
-            <InputScholarship />
-          </ProtectedRoute>
-        } />
-        <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <Dashboard userAnswers={answers} />
-          </ProtectedRoute>
-        } />
-        
-        {/* Semi-protected routes - work with or without login */}
+        {/* Questionnaire can be accessed with or without login */}
         <Route path="/questionnaire" element={
           <Questionnaire 
             onSubmit={handleSubmitAnswers} 
             initialValues={answers} 
           />
         } />
+        
+        {/* Protected routes - all will check for questionnaire completion */}
+        <Route path="/settings" element={
+          <ProtectedRoute>
+            <Settings />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/saved-scholarships" element={
+          <ProtectedRoute>
+            <SavedScholarships />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/input-scholarships" element={
+          <ProtectedRoute>
+            <InputScholarship />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <Dashboard userAnswers={answers} />
+          </ProtectedRoute>
+        } />
+        
+        {/* Results can be viewed without login */}
         <Route path="/results" element={
           <Results 
             answers={answers} 

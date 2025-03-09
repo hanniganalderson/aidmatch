@@ -8,6 +8,7 @@ import { USMap } from './USMap';
 import { SchoolSearch } from './SchoolSearch';
 import { supabase } from '../lib/supabase';
 import type { UserAnswers, SchoolData } from '../types';
+import { FIELDS_OF_STUDY } from '../constants/fields-of-study';
 
 interface QuestionnaireProps {
   onSubmit: (answers: UserAnswers) => void;
@@ -50,38 +51,14 @@ const EDUCATION_LEVELS = [
   'PhD Student'
 ];
 
-// Sample majors (you would replace with your full list)
-const MAJORS = [
-  'Business Administration',
-  'Computer Science',
-  'Engineering',
-  'Biology',
-  'Psychology',
-  'Education',
-  'Nursing',
-  'Communications',
-  'Mathematics',
-  'Economics',
-  'English',
-  'Political Science',
-  'Art & Design',
-  'Chemistry',
-  'History',
-  'Philosophy',
-  'Sociology',
-  'Physics',
-  'Criminal Justice',
-  'Marketing'
-];
-
 export function Questionnaire({ onSubmit, initialValues = {} }: QuestionnaireProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [majorInput, setMajorInput] = useState(initialValues.major || '');
-  const [filteredMajors, setFilteredMajors] = useState<string[]>(MAJORS);
-  const [majorDropdownOpen, setMajorDropdownOpen] = useState(false);
+  const [fieldInput, setFieldInput] = useState(initialValues.major || '');
+  const [filteredFields, setFilteredFields] = useState<string[]>(FIELDS_OF_STUDY);
+  const [fieldDropdownOpen, setFieldDropdownOpen] = useState(false);
   const [validFields, setValidFields] = useState<Record<string, boolean>>({});
   
   // Initialize answers with defaults
@@ -94,7 +71,7 @@ export function Questionnaire({ onSubmit, initialValues = {} }: QuestionnairePro
     dashboard_preferences: initialValues.dashboard_preferences || [],
   });
 
-  const majorInputRef = useRef<HTMLInputElement>(null);
+  const fieldInputRef = useRef<HTMLInputElement>(null);
 
   // Animation variants
   const pageVariants = {
@@ -162,7 +139,7 @@ export function Questionnaire({ onSubmit, initialValues = {} }: QuestionnairePro
     }
 
     if (currentStep === 2 && (!answers.major || !answers.gpa)) {
-      setError('Please select your major and GPA.');
+      setError('Please select your field of study and GPA.');
       return;
     }
 
@@ -185,22 +162,22 @@ export function Questionnaire({ onSubmit, initialValues = {} }: QuestionnairePro
     setError(null);
   };
 
-  const handleMajorInput = (value: string) => {
+  const handleFieldInput = (value: string) => {
     setError(null);
-    setMajorInput(value);
+    setFieldInput(value);
     setAnswers(prev => ({ ...prev, major: value }));
     
-    // Filter majors based on input
-    setFilteredMajors(
-      MAJORS.filter(major => major.toLowerCase().includes(value.toLowerCase()))
+    // Filter fields based on input
+    setFilteredFields(
+      FIELDS_OF_STUDY.filter(field => field.toLowerCase().includes(value.toLowerCase()))
     );
-    setMajorDropdownOpen(true);
+    setFieldDropdownOpen(true);
   };
 
-  const handleMajorSelect = (major: string) => {
-    setMajorInput(major);
-    setAnswers(prev => ({ ...prev, major }));
-    setMajorDropdownOpen(false);
+  const handleFieldSelect = (field: string) => {
+    setFieldInput(field);
+    setAnswers(prev => ({ ...prev, major: field }));
+    setFieldDropdownOpen(false);
     setError(null);
   };
 
@@ -212,8 +189,8 @@ export function Questionnaire({ onSubmit, initialValues = {} }: QuestionnairePro
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (majorInputRef.current && !majorInputRef.current.contains(event.target as Node)) {
-        setMajorDropdownOpen(false);
+      if (fieldInputRef.current && !fieldInputRef.current.contains(event.target as Node)) {
+        setFieldDropdownOpen(false);
       }
     };
 
@@ -421,13 +398,13 @@ export function Questionnaire({ onSubmit, initialValues = {} }: QuestionnairePro
                     </div>
                   )}
 
-                  {/* Step 3: Major & GPA */}
+                  {/* Step 3: Field of Study & GPA */}
                   {currentStep === 2 && (
                     <div className="space-y-6">
-                      <div className="space-y-4 relative" ref={majorInputRef}>
+                      <div className="space-y-4 relative" ref={fieldInputRef}>
                         <div className="flex items-center justify-between">
                           <label className="block text-gray-800 dark:text-gray-100 font-medium text-lg">
-                            Major
+                            Field of Study
                           </label>
                           {validFields.major && (
                             <span className="flex items-center text-xs text-green-600 dark:text-green-400">
@@ -439,35 +416,35 @@ export function Questionnaire({ onSubmit, initialValues = {} }: QuestionnairePro
                         <div className="relative">
                           <input 
                             type="text"
-                            value={majorInput}
-                            onChange={(e) => handleMajorInput(e.target.value)}
-                            onFocus={() => setMajorDropdownOpen(true)}
+                            value={fieldInput}
+                            onChange={(e) => handleFieldInput(e.target.value)}
+                            onFocus={() => setFieldDropdownOpen(true)}
                             className="w-full p-4 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-green-500 dark:focus:border-green-400"
-                            placeholder="Search for your major"
+                            placeholder="Search for your field of study"
                           />
                           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
                         </div>
                         
-                        {majorDropdownOpen && filteredMajors.length > 0 && (
+                        {fieldDropdownOpen && filteredFields.length > 0 && (
                           <motion.div 
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -10 }}
                             className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 shadow-lg max-h-60 overflow-auto rounded-md border border-gray-200 dark:border-gray-700"
                           >
-                            {filteredMajors.map((major) => (
+                            {filteredFields.map((field) => (
                               <button
-                                key={major}
+                                key={field}
                                 className={`block w-full text-left px-4 py-3 hover:bg-green-50 dark:hover:bg-green-900/20 ${
-                                  majorInput === major 
+                                  fieldInput === field 
                                     ? 'bg-green-50 dark:bg-green-900/30 text-gray-800 dark:text-gray-100' 
                                     : 'text-gray-800 dark:text-gray-100'
                                 }`}
-                                onClick={() => handleMajorSelect(major)}
+                                onClick={() => handleFieldSelect(field)}
                               >
                                 <div className="flex items-center justify-between">
-                                  <span>{major}</span>
-                                  {majorInput === major && (
+                                  <span>{field}</span>
+                                  {fieldInput === field && (
                                     <Check className="h-4 w-4 text-green-500" />
                                   )}
                                 </div>

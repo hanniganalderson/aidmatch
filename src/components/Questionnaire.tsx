@@ -7,6 +7,7 @@ import { ProgressBar } from './ProgressBar';
 import { USMap } from './USMap';
 import { SchoolSearch } from './SchoolSearch';
 import { supabase } from '../lib/supabase';
+import { FIELDS_OF_STUDY } from '../constants/fields-of-study';
 import type { UserAnswers, SchoolData } from '../types';
 
 interface QuestionnaireProps {
@@ -50,37 +51,13 @@ const EDUCATION_LEVELS = [
   'PhD Student'
 ];
 
-// Sample majors (you would replace with your full list)
-const MAJORS = [
-  'Business Administration',
-  'Computer Science',
-  'Engineering',
-  'Biology',
-  'Psychology',
-  'Education',
-  'Nursing',
-  'Communications',
-  'Mathematics',
-  'Economics',
-  'English',
-  'Political Science',
-  'Art & Design',
-  'Chemistry',
-  'History',
-  'Philosophy',
-  'Sociology',
-  'Physics',
-  'Criminal Justice',
-  'Marketing'
-];
-
 export function Questionnaire({ onSubmit, initialValues = {} }: QuestionnaireProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [majorInput, setMajorInput] = useState(initialValues.major || '');
-  const [filteredMajors, setFilteredMajors] = useState<string[]>(MAJORS);
+  const [filteredMajors, setFilteredMajors] = useState<string[]>(FIELDS_OF_STUDY.slice(0, 20));
   const [majorDropdownOpen, setMajorDropdownOpen] = useState(false);
   const [validFields, setValidFields] = useState<Record<string, boolean>>({});
   
@@ -191,9 +168,17 @@ export function Questionnaire({ onSubmit, initialValues = {} }: QuestionnairePro
     setAnswers(prev => ({ ...prev, major: value }));
     
     // Filter majors based on input
-    setFilteredMajors(
-      MAJORS.filter(major => major.toLowerCase().includes(value.toLowerCase()))
-    );
+    if (value.trim()) {
+      setFilteredMajors(
+        FIELDS_OF_STUDY.filter(major => 
+          major.toLowerCase().includes(value.toLowerCase())
+        ).slice(0, 50) // Limit to 50 matches for performance
+      );
+    } else {
+      // Show a default set of common majors if no search term
+      setFilteredMajors(FIELDS_OF_STUDY.slice(0, 20));
+    }
+    
     setMajorDropdownOpen(true);
   };
 
@@ -427,7 +412,7 @@ export function Questionnaire({ onSubmit, initialValues = {} }: QuestionnairePro
                       <div className="space-y-4 relative" ref={majorInputRef}>
                         <div className="flex items-center justify-between">
                           <label className="block text-gray-800 dark:text-gray-100 font-medium text-lg">
-                            Major
+                            Field of Study
                           </label>
                           {validFields.major && (
                             <span className="flex items-center text-xs text-green-600 dark:text-green-400">
@@ -443,7 +428,7 @@ export function Questionnaire({ onSubmit, initialValues = {} }: QuestionnairePro
                             onChange={(e) => handleMajorInput(e.target.value)}
                             onFocus={() => setMajorDropdownOpen(true)}
                             className="w-full p-4 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-green-500 dark:focus:border-green-400"
-                            placeholder="Search for your major"
+                            placeholder="Search for your field of study"
                           />
                           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
                         </div>
@@ -473,6 +458,12 @@ export function Questionnaire({ onSubmit, initialValues = {} }: QuestionnairePro
                                 </div>
                               </button>
                             ))}
+                            
+                            {filteredMajors.length >= 50 && majorInput.trim() !== '' && (
+                              <div className="px-4 py-2 text-xs text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700">
+                                Showing top 50 matches. Continue typing to refine results.
+                              </div>
+                            )}
                           </motion.div>
                         )}
                       </div>

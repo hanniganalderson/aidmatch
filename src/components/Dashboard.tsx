@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import {
+  Sparkles,
   Bookmark,
   Calendar,
   Award,
@@ -77,7 +78,8 @@ export function Dashboard({ userAnswers }: { userAnswers?: UserAnswers }) {
         .from('user_profiles')
         .select('*')
         .eq('user_id', user?.id)
-        .single();
+        .single()
+        .throwOnError();
 
       if (error && error.code !== 'PGRST116') throw error;
 

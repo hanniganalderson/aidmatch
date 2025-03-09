@@ -1,4 +1,4 @@
-// src/types.ts
+// src/types.ts - Updated
 import { ComponentType } from 'react';
 
 // Navigation item type
@@ -70,6 +70,8 @@ export interface Scholarship {
   essay_required?: boolean;
   created_at?: string;
   updated_at?: string;
+  // AI-generated flag
+  is_ai_generated?: boolean;
 }
 
 // Scholarship with match score
@@ -106,4 +108,27 @@ export interface ScholarshipFilters {
   // New filter properties
   needBased: boolean | null;
   essayRequired: boolean | null;
+}
+
+// Question for the questionnaire
+export interface Question {
+  id: string;
+  question: string;
+  type: string;
+  options?: string[];
+  parts?: QuestionPart[];
+  min?: number;
+  max?: number;
+  step?: number;
+}
+
+// Part of a double question
+export interface QuestionPart {
+  id: string;
+  question: string;
+  type: string;
+  options?: string[];
+  min?: number;
+  max?: number;
+  step?: number;
 }

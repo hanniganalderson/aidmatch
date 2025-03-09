@@ -1,20 +1,13 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, ChevronDown, X, 
-  DollarSign, Tag, Users, Check, BookOpen,
-  ChevronUp, GraduationCap, SlidersHorizontal, 
-  Clock, Award, School, FileText,
-  BarChart, Bookmark, Sparkles
+  DollarSign, Calendar, Award,
+  ChevronUp, SlidersHorizontal, 
+  FileText, Bookmark, BarChart
 } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-
-interface Category {
-  name: string;
-  count: number;
-  scholarships: any[];
-}
 
 interface Filters {
   minAmount: number;
@@ -39,8 +32,6 @@ interface FiltersProps {
   setSearchTerm: React.Dispatch<React.SetStateAction<string>>;
   totalResults: number;
   resetFilters: () => void;
-  majors: string[];
-  categories: Category[]; // If you want to keep recommended categories as quick filter cards
 }
 
 export function ResultsFilters({
@@ -51,57 +42,23 @@ export function ResultsFilters({
   searchTerm,
   setSearchTerm,
   totalResults,
-  resetFilters,
-  majors = [],
-  categories = []
+  resetFilters
 }: FiltersProps) {
   const [activeFiltersCount, setActiveFiltersCount] = useState(0);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-
-  // For major searching
-  const [majorSearchTerm, setMajorSearchTerm] = useState('');
-  const [filteredMajors, setFilteredMajors] = useState<string[]>([]);
-  const [isMajorDropdownOpen, setIsMajorDropdownOpen] = useState(false);
-  const majorInputRef = useRef<HTMLInputElement>(null);
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
 
   // Count active filters
   useEffect(() => {
     let count = 0;
     if (filters.minAmount > 0) count++;
     if (filters.maxAmount < 100000) count++;
-    if (filters.competition.length > 0) count++;
     if (filters.showSavedOnly) count++;
     if (filters.scope.length > 0) count++;
     if (filters.deadline) count++;
-    if (filters.educationLevel.length > 0) count++;
-    if (filters.major) count++;
     if (filters.needBased !== null) count++;
     if (filters.essayRequired !== null) count++;
     setActiveFiltersCount(count);
   }, [filters]);
-
-  // Initialize filtered majors
-  useEffect(() => {
-    setFilteredMajors(majors.slice(0, 20));
-  }, [majors]);
-
-  // Close major dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (majorInputRef.current && !majorInputRef.current.contains(event.target as Node)) {
-        setIsMajorDropdownOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // Focus major input if dropdown is opened
-  useEffect(() => {
-    if (isMajorDropdownOpen && majorInputRef.current) {
-      majorInputRef.current.focus();
-    }
-  }, [isMajorDropdownOpen]);
 
   // Basic arrays for filter options
   const deadlineOptions = [
@@ -111,29 +68,11 @@ export function ResultsFilters({
     { value: '90', label: 'Next 3 months' }
   ];
 
-  const educationLevelOptions = [
-    'High School Senior',
-    'College Freshman',
-    'College Sophomore',
-    'College Junior', 
-    'College Senior',
-    'Masters Student',
-    'PhD Student'
-  ];
-
   // ========== Filter Toggle Helpers ==========
 
   const handleSearchIconClick = () => {
     if (searchInputRef.current) {
       searchInputRef.current.focus();
-    }
-  };
-
-  const toggleCompetition = (level: string) => {
-    if (filters.competition.includes(level)) {
-      setFilters({ ...filters, competition: filters.competition.filter(l => l !== level) });
-    } else {
-      setFilters({ ...filters, competition: [...filters.competition, level] });
     }
   };
 
@@ -145,92 +84,12 @@ export function ResultsFilters({
     }
   };
 
-  const toggleEducationLevel = (level: string) => {
-    if (filters.educationLevel.includes(level)) {
-      setFilters({
-        ...filters,
-        educationLevel: filters.educationLevel.filter(l => l !== level)
-      });
-    } else {
-      setFilters({
-        ...filters,
-        educationLevel: [...filters.educationLevel, level]
-      });
-    }
-  };
-
   const toggleNeedBased = (value: boolean | null) => {
     setFilters({ ...filters, needBased: filters.needBased === value ? null : value });
   };
 
   const toggleEssayRequired = (value: boolean | null) => {
     setFilters({ ...filters, essayRequired: filters.essayRequired === value ? null : value });
-  };
-
-  // Major Search
-  const handleMajorSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setMajorSearchTerm(value);
-    if (value.trim()) {
-      const filtered = majors.filter(m => m.toLowerCase().includes(value.toLowerCase()));
-      setFilteredMajors(filtered);
-    } else {
-      setFilteredMajors(majors.slice(0, 20));
-    }
-  };
-
-  const selectMajor = (major: string) => {
-    setFilters({ ...filters, major });
-    setMajorSearchTerm(major);
-    setIsMajorDropdownOpen(false);
-  };
-
-  const clearMajor = () => {
-    setFilters({ ...filters, major: null });
-    setMajorSearchTerm('');
-  };
-
-  // ========== Category Quick Filters ==========
-  // (Integrated into the expanded filter area)
-  const getCategoryIcon = (name: string) => {
-    switch (name) {
-      case 'Best Matches': return Award;
-      case 'Local Scholarships': return School;
-      case 'Major-Specific': return BookOpen;
-      case 'Easiest to Apply': return Tag;
-      case 'Highest Amount': return DollarSign;
-      case 'Deadline Soon': return Clock;
-      case 'No Essay Required': return FileText;
-      case 'Need-Based': return Users;
-      case 'Merit-Based': return Award;
-      default: return Bookmark;
-    }
-  };
-
-  const handleCategorySelect = (categoryName: string) => {
-    let newFilters = { ...filters };
-    if (categoryName === 'Best Matches') {
-      newFilters.sortBy = 'match';
-    } else if (categoryName === 'Local Scholarships') {
-      newFilters.scope = ['Local', 'State'];
-    } else if (categoryName === 'Major-Specific') {
-      // Keep user’s chosen major or let them pick
-    } else if (categoryName === 'Easiest to Apply') {
-      newFilters.competition = ['Low'];
-      newFilters.essayRequired = false;
-    } else if (categoryName === 'Highest Amount') {
-      newFilters.sortBy = 'amount';
-      newFilters.minAmount = 5000;
-    } else if (categoryName === 'Deadline Soon') {
-      newFilters.deadline = '30';
-    } else if (categoryName === 'No Essay Required') {
-      newFilters.essayRequired = false;
-    } else if (categoryName === 'Need-Based') {
-      newFilters.needBased = true;
-    } else if (categoryName === 'Merit-Based') {
-      newFilters.needBased = false;
-    }
-    setFilters(newFilters);
   };
 
   return (
@@ -303,14 +162,6 @@ export function ResultsFilters({
               />
             ) : null}
 
-            {filters.competition.map(level => (
-              <FilterBadge
-                key={level}
-                label={`${level} Competition`}
-                onRemove={() => toggleCompetition(level)}
-              />
-            ))}
-
             {filters.scope.map(scope => (
               <FilterBadge
                 key={scope}
@@ -318,21 +169,6 @@ export function ResultsFilters({
                 onRemove={() => toggleScope(scope)}
               />
             ))}
-
-            {filters.educationLevel.map(level => (
-              <FilterBadge
-                key={level}
-                label={level}
-                onRemove={() => toggleEducationLevel(level)}
-              />
-            ))}
-
-            {filters.major && (
-              <FilterBadge
-                label={`Major: ${filters.major}`}
-                onRemove={clearMajor}
-              />
-            )}
 
             {filters.deadline && (
               <FilterBadge
@@ -390,42 +226,6 @@ export function ResultsFilters({
             {/* Card-based filter container */}
             <div className="mt-4 p-6 bg-white dark:bg-gray-900/90 rounded-xl border border-gray-200/50 dark:border-gray-700/50 shadow-md grid gap-6">
               
-              {/* Quick Filter Cards (Recommended Categories) */}
-              {categories.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-medium text-gray-800 dark:text-gray-100 mb-3 flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-primary-500" />
-                    Quick Filters
-                  </h3>
-                  <div className="flex gap-3 overflow-x-auto pb-2 hide-scrollbar">
-                    {categories.map((cat) => {
-                      const Icon = getCategoryIcon(cat.name);
-                      return (
-                        <motion.button
-                          key={cat.name}
-                          onClick={() => handleCategorySelect(cat.name)}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          className="flex-shrink-0 px-4 py-3 rounded-lg border border-gray-200/50 dark:border-gray-700/50 bg-gray-50 dark:bg-gray-800/60 text-gray-700 dark:text-gray-200 hover:border-primary-400 transition-all shadow-sm"
-                        >
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 flex items-center justify-center rounded-full bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400">
-                              <Icon className="w-4 h-4" />
-                            </div>
-                            <div className="flex flex-col items-start">
-                              <span className="text-sm font-medium">{cat.name}</span>
-                              <span className="text-xs text-gray-500 dark:text-gray-400">
-                                {cat.count} match{cat.count !== 1 && 'es'}
-                              </span>
-                            </div>
-                          </div>
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
               {/* Filter Sections */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* Award Amount Range */}
@@ -469,55 +269,8 @@ export function ResultsFilters({
                   </div>
                 </FilterCard>
 
-                {/* Major */}
-                <FilterCard title="Major" icon={BookOpen}>
-                  <div className="relative" ref={majorInputRef}>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary-500" />
-                      <input
-                        type="text"
-                        value={majorSearchTerm}
-                        onChange={handleMajorSearch}
-                        onFocus={() => setIsMajorDropdownOpen(true)}
-                        placeholder="Search major..."
-                        className="w-full pl-8 pr-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                      />
-                      {majorSearchTerm && (
-                        <button
-                          onClick={clearMajor}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                    
-                    <AnimatePresence>
-                      {isMajorDropdownOpen && filteredMajors.length > 0 && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
-                          className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 shadow-lg max-h-40 overflow-y-auto"
-                        >
-                          {filteredMajors.map((m) => (
-                            <button
-                              key={m}
-                              onClick={() => selectMajor(m)}
-                              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100 flex items-center justify-between"
-                            >
-                              <span>{m}</span>
-                              {filters.major === m && <Check className="w-4 h-4 text-primary-500" />}
-                            </button>
-                          ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </FilterCard>
-
                 {/* Deadline */}
-                <FilterCard title="Deadline" icon={Clock}>
+                <FilterCard title="Deadline" icon={Calendar}>
                   <select
                     value={filters.deadline || ''}
                     onChange={(e) => setFilters({...filters, deadline: e.target.value || null})}
@@ -529,64 +282,6 @@ export function ResultsFilters({
                       </option>
                     ))}
                   </select>
-                </FilterCard>
-
-                {/* Scope */}
-                <FilterCard title="Geographic Scope" icon={School}>
-                  {['Local', 'State', 'National'].map(scope => (
-                    <label key={scope} className="flex items-center gap-2 text-sm mb-1 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={filters.scope.includes(scope)}
-                        onChange={() => toggleScope(scope)}
-                        className="rounded border-gray-300 text-primary-500 focus:ring-primary-500"
-                      />
-                      <span className="text-gray-700 dark:text-gray-300">{scope}</span>
-                    </label>
-                  ))}
-                </FilterCard>
-
-                {/* Competition */}
-                <FilterCard title="Competition" icon={Users}>
-                  {['Low', 'Medium', 'High'].map(level => (
-                    <label key={level} className="flex items-center gap-2 text-sm mb-1 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={filters.competition.includes(level)}
-                        onChange={() => toggleCompetition(level)}
-                        className="rounded border-gray-300 text-primary-500 focus:ring-primary-500"
-                      />
-                      <span className="text-gray-700 dark:text-gray-300">
-                        {level}
-                      </span>
-                    </label>
-                  ))}
-                </FilterCard>
-
-                {/* Scholarship Type */}
-                <FilterCard title="Scholarship Type" icon={Award}>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => toggleNeedBased(true)}
-                      className={`flex-1 text-sm py-2 rounded-md border ${
-                        filters.needBased === true
-                          ? 'bg-primary-100 dark:bg-primary-900/30 border-primary-300 text-primary-600 dark:text-primary-300'
-                          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-primary-300'
-                      }`}
-                    >
-                      Need-Based
-                    </button>
-                    <button
-                      onClick={() => toggleNeedBased(false)}
-                      className={`flex-1 text-sm py-2 rounded-md border ${
-                        filters.needBased === false
-                          ? 'bg-primary-100 dark:bg-primary-900/30 border-primary-300 text-primary-600 dark:text-primary-300'
-                          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-primary-300'
-                      }`}
-                    >
-                      Merit-Based
-                    </button>
-                  </div>
                 </FilterCard>
 
                 {/* Essay Requirement */}
@@ -615,26 +310,48 @@ export function ResultsFilters({
                   </div>
                 </FilterCard>
 
-                {/* Education Level */}
-                <FilterCard title="Education Level" icon={GraduationCap}>
-                  <div className="space-y-2 max-h-32 overflow-y-auto pr-2 hide-scrollbar">
-                    {educationLevelOptions.map(level => (
-                      <label key={level} className="flex items-center gap-2 text-sm mb-1 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={filters.educationLevel.includes(level)}
-                          onChange={() => toggleEducationLevel(level)}
-                          className="rounded border-gray-300 text-primary-500 focus:ring-primary-500"
-                        />
-                        <span className="text-gray-700 dark:text-gray-300">
-                          {level}
-                        </span>
-                      </label>
-                    ))}
+                {/* Scholarship Type */}
+                <FilterCard title="Scholarship Type" icon={Award}>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => toggleNeedBased(false)}
+                      className={`flex-1 text-sm py-2 rounded-md border ${
+                        filters.needBased === false
+                          ? 'bg-primary-100 dark:bg-primary-900/30 border-primary-300 text-primary-600 dark:text-primary-300'
+                          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-primary-300'
+                      }`}
+                    >
+                      Merit-Based
+                    </button>
+                    <button
+                      onClick={() => toggleNeedBased(true)}
+                      className={`flex-1 text-sm py-2 rounded-md border ${
+                        filters.needBased === true
+                          ? 'bg-primary-100 dark:bg-primary-900/30 border-primary-300 text-primary-600 dark:text-primary-300'
+                          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-primary-300'
+                      }`}
+                    >
+                      Need-Based
+                    </button>
                   </div>
                 </FilterCard>
 
-                {/* Sort By + Saved */}
+                {/* Geographic Scope */}
+                <FilterCard title="Geographic Scope" icon={Award}>
+                  {['Local', 'State', 'National'].map(scope => (
+                    <label key={scope} className="flex items-center gap-2 text-sm mb-1 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={filters.scope.includes(scope)}
+                        onChange={() => toggleScope(scope)}
+                        className="rounded border-gray-300 text-primary-500 focus:ring-primary-500"
+                      />
+                      <span className="text-gray-700 dark:text-gray-300">{scope}</span>
+                    </label>
+                  ))}
+                </FilterCard>
+
+                {/* Sort & Saved */}
                 <FilterCard title="Sort & Saved" icon={BarChart}>
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

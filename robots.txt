@@ -1,0 +1,10 @@
+# robots.txt for aidmatch.co
+User-agent: *
+Allow: /
+
+# Paths that should not be crawled by search engines
+Disallow: /api/
+Disallow: /admin/
+
+# Sitemaps
+Sitemap: https://aidmatch.co/sitemap.xml

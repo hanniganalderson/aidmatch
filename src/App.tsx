@@ -1,3 +1,4 @@
+// src/App.tsx (updated with ErrorBoundary)
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useState, useEffect } from 'react';
 import { Layout } from './components/Layout';
@@ -14,6 +15,7 @@ import { InputScholarship } from './components/InputScholarship';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SubscriptionProvider } from './contexts/SubscriptionContext';
 import { supabase } from './lib/supabase';
+import ErrorBoundary from './components/ErrorBoundary';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import { Plus } from './pages/Plus';
@@ -192,9 +194,11 @@ function AppContent() {
         } />
         
         <Route path="/dashboard" element={
-          <ProtectedRoute requireAuth={false}>
-            <Dashboard userAnswers={answers} />
-          </ProtectedRoute>
+          <ErrorBoundary>
+            <ProtectedRoute requireAuth={false}>
+              <Dashboard userAnswers={answers} />
+            </ProtectedRoute>
+          </ErrorBoundary>
         } />
         
         {/* Routes that require authentication */}
@@ -217,13 +221,15 @@ function AppContent() {
 
 function App() {
   return (
-    <AuthProvider>
-      <SubscriptionProvider>
-        <Router>
-          <AppContent />
-        </Router>
-      </SubscriptionProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <SubscriptionProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </SubscriptionProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

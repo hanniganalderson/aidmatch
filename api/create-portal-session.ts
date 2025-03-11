@@ -1,7 +1,11 @@
-// api/create-portal-session.js
-const Stripe = require('stripe');
+// api/create-portal-session.ts
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import Stripe from 'stripe';
 
-module.exports = async (req, res) => {
+export default async function handler(
+  req: VercelRequest, 
+  res: VercelResponse
+) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -19,7 +23,14 @@ module.exports = async (req, res) => {
 
   try {
     // Initialize Stripe with the secret key
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const stripeKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeKey) {
+      throw new Error('Missing Stripe secret key');
+    }
+    
+    const stripe = new Stripe(stripeKey, {
+      apiVersion: '2025-02-24.acacia', // Updated to match your environment
+    });
     
     // Get customer ID from request body
     const { customer_id } = req.body;
@@ -41,6 +52,9 @@ module.exports = async (req, res) => {
     return res.status(200).json({ url: session.url });
   } catch (error) {
     console.error('Portal session error:', error);
-    return res.status(500).json({ error: 'Failed to create portal session' });
+    return res.status(500).json({ 
+      error: 'Failed to create portal session',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
-};
+}

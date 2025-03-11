@@ -1,26 +1,24 @@
-// api/stripe-webhook.js
-const Stripe = require('stripe');
-const { createClient } = require('@supabase/supabase-js');
+// api/stripe-webhook.ts
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import Stripe from 'stripe';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import getRawBody from 'raw-body';
 
 // Helper to parse the raw body for Stripe signatures
-const getRawBody = async (req) => {
-  return new Promise((resolve) => {
-    let data = '';
-    req.on('data', (chunk) => {
-      data += chunk;
-    });
-    req.on('end', () => {
-      resolve(Buffer.from(data));
-    });
-  });
-};
+async function readRawBody(req: VercelRequest): Promise<Buffer> {
+  const bodyPromise = getRawBody(req);
+  return bodyPromise;
+}
 
 // Handle successful checkout completion
-async function handleCheckoutSessionCompleted(session, supabase) {
+async function handleCheckoutSessionCompleted(
+  session: Stripe.Checkout.Session, 
+  supabase: SupabaseClient<any, "public", any>
+): Promise<boolean> {
   try {
     // Extract data from the session
-    const customerId = session.customer;
-    const subscriptionId = session.subscription;
+    const customerId = session.customer as string;
+    const subscriptionId = session.subscription as string;
     const customerEmail = session.customer_details?.email;
     
     if (!customerId || !customerEmail || !subscriptionId) {
@@ -77,13 +75,17 @@ async function handleCheckoutSessionCompleted(session, supabase) {
     console.log(`Subscription created successfully for user ${userId}`);
     return true;
   } catch (error) {
-    console.error(`Error handling checkout session: ${error.message}`);
+    console.error(`Error handling checkout session: ${error instanceof Error ? error.message : 'Unknown error'}`);
     throw error;
   }
 }
 
 // Handle subscription updates
-async function handleSubscriptionUpdated(subscription, stripe, supabase) {
+async function handleSubscriptionUpdated(
+  subscription: Stripe.Subscription, 
+  stripe: Stripe,
+  supabase: SupabaseClient<any, "public", any>
+): Promise<boolean> {
   try {
     const subscriptionId = subscription.id;
     const status = subscription.status;
@@ -134,13 +136,16 @@ async function handleSubscriptionUpdated(subscription, stripe, supabase) {
     console.log(`Subscription ${subscriptionId} updated to ${status}`);
     return true;
   } catch (error) {
-    console.error(`Error handling subscription update: ${error.message}`);
+    console.error(`Error handling subscription update: ${error instanceof Error ? error.message : 'Unknown error'}`);
     throw error;
   }
 }
 
 // Handle subscription deletion
-async function handleSubscriptionDeleted(subscription, supabase) {
+async function handleSubscriptionDeleted(
+  subscription: Stripe.Subscription,
+  supabase: SupabaseClient<any, "public", any>
+): Promise<boolean> {
   try {
     const subscriptionId = subscription.id;
     
@@ -189,19 +194,22 @@ async function handleSubscriptionDeleted(subscription, supabase) {
     console.log(`Subscription ${subscriptionId} marked as canceled`);
     return true;
   } catch (error) {
-    console.error(`Error handling subscription deletion: ${error.message}`);
+    console.error(`Error handling subscription deletion: ${error instanceof Error ? error.message : 'Unknown error'}`);
     throw error;
   }
 }
 
 // Main webhook handler
-module.exports = async (req, res) => {
+export default async function handler(
+  req: VercelRequest, 
+  res: VercelResponse
+) {
   // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const signature = req.headers['stripe-signature'];
+  const signature = req.headers['stripe-signature'] as string;
   
   if (!signature) {
     return res.status(400).json({ error: 'Missing stripe-signature header' });
@@ -209,22 +217,35 @@ module.exports = async (req, res) => {
 
   try {
     // Get raw body buffer
-    const rawBody = await getRawBody(req);
+    const rawBody = await readRawBody(req);
     
     // Initialize Stripe with secret key
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
+    const stripeKey = process.env.STRIPE_SECRET_KEY;
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    
+    if (!stripeKey || !webhookSecret) {
+      throw new Error('Missing required environment variables');
+    }
+    
+    const stripe = new Stripe(stripeKey, {
+      apiVersion: '2025-02-24.acacia', // Updated to match your environment
+    });
     
     // Initialize Supabase client
-    const supabase = createClient(
-      process.env.SUPABASE_URL || '',
-      process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-    );
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing Supabase credentials');
+    }
+    
+    const supabase = createClient(supabaseUrl, supabaseKey);
     
     // Verify the webhook signature
     const event = stripe.webhooks.constructEvent(
       rawBody, 
       signature, 
-      process.env.STRIPE_WEBHOOK_SECRET || ''
+      webhookSecret
     );
     
     console.log(`Webhook received: ${event.type}`);
@@ -232,17 +253,17 @@ module.exports = async (req, res) => {
     // Handle specific event types
     switch (event.type) {
       case 'checkout.session.completed': {
-        await handleCheckoutSessionCompleted(event.data.object, supabase);
+        await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session, supabase);
         break;
       }
       
       case 'customer.subscription.updated': {
-        await handleSubscriptionUpdated(event.data.object, stripe, supabase);
+        await handleSubscriptionUpdated(event.data.object as Stripe.Subscription, stripe, supabase);
         break;
       }
       
       case 'customer.subscription.deleted': {
-        await handleSubscriptionDeleted(event.data.object, supabase);
+        await handleSubscriptionDeleted(event.data.object as Stripe.Subscription, supabase);
         break;
       }
       
@@ -258,7 +279,7 @@ module.exports = async (req, res) => {
     
     return res.status(200).json({ received: true });
   } catch (error) {
-    console.error(`Webhook error: ${error.message}`);
-    return res.status(400).json({ error: `Webhook error: ${error.message}` });
+    console.error(`Webhook error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    return res.status(400).json({ error: `Webhook error: ${error instanceof Error ? error.message : 'Unknown error'}` });
   }
-};
+}

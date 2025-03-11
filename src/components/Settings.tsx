@@ -2,9 +2,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Save, User, Lock, Bell, Moon, Sun, Trash2, LogOut, 
+  Save, User, Lock, Bell, Moon, Sun, Trash2, LogOut, Check, 
   AlertCircle, Settings as SettingsIcon, Shield, Sparkles, ArrowRight,
-  LucideIcon, CreditCard, Crown, Zap, Check
+  LucideIcon, CreditCard, Crown, RefreshCw, Zap
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -18,11 +18,13 @@ import { createCheckoutSession } from '../lib/checkout';
 export function Settings() {
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { isSubscribed, subscription } = useSubscription();
+  const { isSubscribed, subscription, refreshSubscription } = useSubscription();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('account');
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncSuccess, setSyncSuccess] = useState(false);
   
   // Account settings
   const [name, setName] = useState(user?.user_metadata?.name || '');
@@ -103,6 +105,19 @@ export function Settings() {
       navigate('/');
     } catch (error) {
       console.error('Error signing out:', error);
+    }
+  };
+
+  const handleSyncSubscription = async () => {
+    try {
+      setSyncing(true);
+      await refreshSubscription();
+      setSyncSuccess(true);
+      setTimeout(() => setSyncSuccess(false), 3000);
+    } catch (error) {
+      console.error('Error syncing subscription status:', error);
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -793,15 +808,42 @@ export function Settings() {
                             </div>
                           </div>
                           
-                          <motion.button
-                            whileHover={{ scale: 1.02, translateY: -2 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => navigate('/account/billing')}
-                            className="px-4 py-2 rounded-lg bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-700/50 text-sm flex items-center gap-2 shadow-sm hover:shadow-md transition-all"
-                          >
-                            <CreditCard className="w-4 h-4" />
-                            Manage Subscription
-                          </motion.button>
+                          <div className="flex">
+                            <motion.button
+                              whileHover={{ scale: 1.02, translateY: -2 }}
+                              whileTap={{ scale: 0.98 }}
+                              onClick={handleSyncSubscription}
+                              disabled={syncing}
+                              className="px-4 py-2 rounded-lg bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 text-sm flex items-center gap-2 shadow-sm hover:shadow-md transition-all mr-3"
+                            >
+                              {syncing ? (
+                                <>
+                                  <div className="w-4 h-4 border-2 border-gray-600 dark:border-gray-400 border-t-transparent rounded-full animate-spin" />
+                                  <span>Syncing...</span>
+                                </>
+                              ) : syncSuccess ? (
+                                <>
+                                  <Check className="w-4 h-4 text-green-500" />
+                                  <span>Synced!</span>
+                                </>
+                              ) : (
+                                <>
+                                  <RefreshCw className="w-4 h-4" />
+                                  <span>Sync Status</span>
+                                </>
+                              )}
+                            </motion.button>
+                            
+                            <motion.button
+                              whileHover={{ scale: 1.02, translateY: -2 }}
+                              whileTap={{ scale: 0.98 }}
+                              onClick={() => navigate('/account/billing')}
+                              className="px-4 py-2 rounded-lg bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-700/50 text-sm flex items-center gap-2 shadow-sm hover:shadow-md transition-all"
+                            >
+                              <CreditCard className="w-4 h-4" />
+                              Manage Subscription
+                            </motion.button>
+                          </div>
                         </div>
                         
                         <div className="mt-4 grid grid-cols-2 gap-6">
@@ -845,8 +887,8 @@ export function Settings() {
                           </div>
                           
                           <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                            <h4 className="font-medium text-gray-900 dark:text-white mb-3">Subscription Details</h4>
-                            <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                            <h4 className="font-medium text-gray-900 dark:text-white">Subscription Details</h4>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                               Your subscription began on {subscription?.created_at 
                                 ? new Date(subscription.created_at).toLocaleDateString(undefined, { 
                                     year: 'numeric', 
@@ -855,7 +897,7 @@ export function Settings() {
                                   }) 
                                 : 'Unknown'}
                             </p>
-                            <p className="text-sm text-gray-600 dark:text-gray-300">
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
                               Manage your payment methods and view your billing history from the billing portal.
                             </p>
                           </div>

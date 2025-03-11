@@ -39,6 +39,10 @@ export const FeatureLimits = {
     free: 0,     // Free users get 0 priority support
     plus: Infinity // Unlimited for plus users
   },
+  [FeatureFlagName.DEADLINE_REMINDERS]: {
+    free: 3,     // Free users get 3 deadline reminders
+    plus: Infinity // Unlimited for plus users
+  },
   [FeatureFlagName.VIEW_RESULTS]: {
     free: 10,     // Free users get 10 view results
     plus: Infinity // Unlimited for plus users

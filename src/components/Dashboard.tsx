@@ -15,6 +15,14 @@ import {
 import type { UserAnswers, ScoredScholarship } from '../types';
 import { Button } from './ui/button';
 
+interface ScholarshipData {
+  id: string;
+  code: string;
+  name: string;
+  amount: number;
+  deadline: string | null;
+}
+
 export function Dashboard({ userAnswers }: { userAnswers?: UserAnswers }) {
   const { user } = useAuth();
   const navigate = useNavigate();

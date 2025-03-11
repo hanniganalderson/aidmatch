@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useState, useEffect } from 'react';
 import { Layout } from './components/Layout';
 import { LandingPage } from './components/LandingPage';
@@ -18,25 +18,7 @@ import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { TermsOfService } from './pages/TermsOfService';
 import { clearOAuthErrorParams, processHashErrors } from './lib/auth-utils';
 import type { UserAnswers } from './types';
-
-// Protected Route component
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Navigate to="/signin" replace />;
-  }
-
-  return <>{children}</>;
-}
+import { ProtectedRoute } from './components/ProtectedRoute';
 
 function AppContent() {
   const { user } = useAuth();
@@ -169,28 +151,29 @@ function AppContent() {
           />
         } />
         
-        {/* Protected routes - all will check for questionnaire completion */}
+        {/* Routes that can be viewed without login but have enhanced functionality when logged in */}
         <Route path="/settings" element={
-          <ProtectedRoute>
+          <ProtectedRoute requireAuth={false}>
             <Settings />
           </ProtectedRoute>
         } />
         
-        <Route path="/saved-scholarships" element={
-          <ProtectedRoute>
-            <SavedScholarships />
-          </ProtectedRoute>
-        } />
-        
         <Route path="/input-scholarships" element={
-          <ProtectedRoute>
+          <ProtectedRoute requireAuth={false}>
             <InputScholarship />
           </ProtectedRoute>
         } />
         
         <Route path="/dashboard" element={
-          <ProtectedRoute>
+          <ProtectedRoute requireAuth={false}>
             <Dashboard userAnswers={answers} />
+          </ProtectedRoute>
+        } />
+        
+        {/* Routes that require authentication */}
+        <Route path="/saved-scholarships" element={
+          <ProtectedRoute requireAuth={true}>
+            <SavedScholarships />
           </ProtectedRoute>
         } />
         

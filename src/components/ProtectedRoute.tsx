@@ -4,7 +4,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
-export function ProtectedRoute({ children }: { children: React.ReactNode }) {
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  requireAuth?: boolean; // New prop to determine if authentication is required
+}
+
+export function ProtectedRoute({ children, requireAuth = true }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
   const location = useLocation();
   const [profileLoading, setProfileLoading] = useState(true);
@@ -43,6 +48,8 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
     if (user && !loading) {
       checkQuestionnaireStatus();
+    } else {
+      setProfileLoading(false);
     }
   }, [user, loading]);
 
@@ -56,14 +63,16 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Redirect to sign in if not authenticated
-  if (!user) {
+  // If authentication is required but user is not logged in, redirect to sign in
+  if (requireAuth && !user) {
     return <Navigate to="/signin" state={{ from: location.pathname }} replace />;
   }
 
   // Redirect to questionnaire if authenticated but hasn't completed it
-  // Skip this check if user is already on the questionnaire page
-  if (!hasCompletedQuestionnaire && !location.pathname.includes('/questionnaire')) {
+  // Skip this check if user is already on the questionnaire page or if auth is not required
+  if (user && !hasCompletedQuestionnaire && 
+      !location.pathname.includes('/questionnaire') && 
+      requireAuth) {
     return <Navigate to="/questionnaire" replace />;
   }
 

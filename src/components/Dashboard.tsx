@@ -2,19 +2,8 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import {
-  Sparkles,
-  Bookmark,
-  Calendar,
-  Award,
-  DollarSign,
-  Pencil,
-  ArrowRight,
-  Check,
-  AlertCircle,
-  TrendingUp,
-  MapPin,
-  Zap,
-  RefreshCw
+  Sparkles, Bookmark, Calendar, Award, DollarSign, Pencil, ArrowRight,
+  Check, AlertCircle, TrendingUp, MapPin, Zap, RefreshCw, LogIn, FileText, UserPlus
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -137,7 +126,13 @@ export function Dashboard({ userAnswers }: { userAnswers?: UserAnswers }) {
 
   // Generate AI scholarship recommendations
   const generateAIRecommendations = async () => {
-    if (aiLoading || !isProfileComplete) return;
+    if (aiLoading || !isProfileComplete || !user) {
+      if (!user) {
+        navigate('/signin');
+      }
+      return;
+    }
+    
     setAiLoading(true);
     try {
       const recommendations = await getAIScholarshipRecommendations(userProfile, 3);
@@ -185,6 +180,45 @@ export function Dashboard({ userAnswers }: { userAnswers?: UserAnswers }) {
     visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
   };
 
+  // Render guest welcome message when not logged in
+  const renderGuestWelcome = () => (
+    <motion.div
+      variants={itemVariants}
+      className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border border-blue-100 dark:border-blue-800/30 flex flex-col md:flex-row items-center justify-between gap-4"
+    >
+      <div className="flex items-center gap-3">
+        <div className="w-14 h-14 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-2xl text-blue-600 dark:text-blue-400">
+          <UserPlus className="w-7 h-7" />
+        </div>
+        <div className="text-center md:text-left">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+            Welcome to AidMatch
+          </h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Sign in or create an account to unlock personalized scholarship recommendations
+          </p>
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <Button
+          onClick={() => navigate('/signin')}
+          variant="outline"
+          className="flex items-center gap-2"
+        >
+          <LogIn className="w-4 h-4" />
+          Sign In
+        </Button>
+        <Button
+          onClick={() => navigate('/signup')}
+          className="flex items-center gap-2"
+        >
+          <UserPlus className="w-4 h-4" />
+          Create Account
+        </Button>
+      </div>
+    </motion.div>
+  );
+
   return (
     <div className="min-h-screen py-12 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
       <div className="container mx-auto px-4">
@@ -195,8 +229,10 @@ export function Dashboard({ userAnswers }: { userAnswers?: UserAnswers }) {
           variants={containerVariants}
           className="max-w-6xl mx-auto"
         >
-          {/* Profile Summary / Incomplete Alert */}
-          {!isProfileComplete ? (
+          {/* Guest Welcome or User Profile */}
+          {!user ? (
+            renderGuestWelcome()
+          ) : !isProfileComplete ? (
             <motion.div
               variants={itemVariants}
               className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-800/30 rounded-lg flex items-center justify-between"
@@ -296,6 +332,20 @@ export function Dashboard({ userAnswers }: { userAnswers?: UserAnswers }) {
                   <div className="flex justify-center py-6">
                     <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
                   </div>
+                ) : !user ? (
+                  <div className="text-center py-10 bg-blue-50/50 dark:bg-blue-900/10 rounded-lg">
+                    <FileText className="w-14 h-14 mx-auto text-blue-400 mb-2" />
+                    <h3 className="text-gray-900 dark:text-white font-medium mb-2">Track Your Scholarships</h3>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm max-w-xs mx-auto mb-4">
+                      Sign in to save scholarships and track their deadlines in one place
+                    </p>
+                    <Button
+                      onClick={() => navigate('/signin')}
+                      className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:opacity-90"
+                    >
+                      Sign In to Save
+                    </Button>
+                  </div>
                 ) : savedScholarships.length > 0 ? (
                   <div className="space-y-3">
                     {savedScholarships.slice(0, 3).map(sch => (
@@ -336,7 +386,7 @@ export function Dashboard({ userAnswers }: { userAnswers?: UserAnswers }) {
                   </div>
                 ) : (
                   <div className="text-center py-6 text-sm text-gray-500 dark:text-gray-400">
-                    No verified scholarships
+                    No saved scholarships yet
                   </div>
                 )}
               </motion.div>
@@ -359,7 +409,21 @@ export function Dashboard({ userAnswers }: { userAnswers?: UserAnswers }) {
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
-                {!isProfileComplete ? (
+                {!user ? (
+                  <div className="text-center py-10 bg-purple-50/50 dark:bg-purple-900/10 rounded-lg">
+                    <Sparkles className="w-14 h-14 mx-auto text-purple-400 mb-2" />
+                    <h3 className="text-gray-900 dark:text-white font-medium mb-2">AI Scholarship Matching</h3>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm max-w-xs mx-auto mb-4">
+                      Sign in to get personalized AI-powered scholarship recommendations based on your profile
+                    </p>
+                    <Button
+                      onClick={() => navigate('/signin')}
+                      className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:opacity-90"
+                    >
+                      Sign In for AI Matches
+                    </Button>
+                  </div>
+                ) : !isProfileComplete ? (
                   <div className="text-center py-6 bg-purple-50/50 dark:bg-purple-900/10 rounded-lg">
                     <Sparkles className="w-12 h-12 mx-auto text-purple-400 mb-2" />
                     <h3 className="text-gray-900 dark:text-white font-medium mb-2">Complete your profile</h3>
@@ -465,6 +529,20 @@ export function Dashboard({ userAnswers }: { userAnswers?: UserAnswers }) {
                 {loading ? (
                   <div className="flex justify-center py-6">
                     <div className="w-8 h-8 border-4 border-red-500 border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : !user ? (
+                  <div className="text-center py-10 bg-red-50/50 dark:bg-red-900/10 rounded-lg">
+                    <Calendar className="w-14 h-14 mx-auto text-red-400 mb-2" />
+                    <h3 className="text-gray-900 dark:text-white font-medium mb-2">Track Application Deadlines</h3>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm max-w-xs mx-auto mb-4">
+                      Create an account to never miss a scholarship application deadline
+                    </p>
+                    <Button
+                      onClick={() => navigate('/signup')}
+                      className="bg-gradient-to-r from-red-500 to-pink-500 hover:opacity-90"
+                    >
+                      Create Account
+                    </Button>
                   </div>
                 ) : savedScholarships.length > 0 ? (
                   <div className="space-y-3">

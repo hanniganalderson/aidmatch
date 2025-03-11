@@ -17,22 +17,25 @@ export async function createCheckoutSession(email: string): Promise<void> {
       body: JSON.stringify({ email }),
     });
 
-    if (!response.ok) {
-      // Try to parse error response as JSON
-      let errorMessage;
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.error || 'Unknown error occurred';
-      } catch (e) {
-        // If can't parse JSON, use text or status
-        const errorText = await response.text();
-        errorMessage = errorText || `Error: ${response.status}`;
-      }
-      throw new Error(errorMessage);
+    // Clone the response for use in case of error
+    const responseClone = response.clone();
+
+    // First, try to parse as JSON
+    let data;
+    try {
+      data = await response.json();
+    } catch (e) {
+      // If JSON parsing fails, handle as text response
+      const textResponse = await responseClone.text();
+      throw new Error(`Server error: ${textResponse || response.status}`);
     }
 
-    const data = await response.json();
-    
+    // Check if the response was ok
+    if (!response.ok) {
+      throw new Error(data.error || `Error: ${response.status}`);
+    }
+
+    // Check for a valid URL
     if (!data.url) {
       throw new Error('No checkout URL returned from server');
     }

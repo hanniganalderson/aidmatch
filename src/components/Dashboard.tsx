@@ -1,4 +1,4 @@
-// src/components/EnhancedDashboard.tsx
+// src/components/Dashboard.tsx
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -17,11 +17,11 @@ import { FeatureLimitIndicator } from './ui/FeatureLimitIndicator';
 import { useFeatureUsage, FeatureName } from '../lib/feature-usage';
 import type { UserAnswers, ScoredScholarship } from '../types';
 
-interface EnhancedDashboardProps {
+interface DashboardProps {
   userAnswers?: UserAnswers;
 }
 
-export function EnhancedDashboard({ userAnswers }: EnhancedDashboardProps) {
+export function Dashboard({ userAnswers }: DashboardProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isSubscribed } = useSubscription();

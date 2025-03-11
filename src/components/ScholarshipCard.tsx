@@ -182,7 +182,7 @@ export function ScholarshipCard({
                 </Badge>
               )}
               {scholarship.is_need_based !== undefined && (
-                <Badge variant={scholarship.is_need_based ? "primary" : "secondary"} className="text-xs">
+                <Badge variant={scholarship.is_need_based ? "default" : "secondary"} className="text-xs">
                   {scholarship.is_need_based ? 'Need-Based' : 'Merit-Based'}
                 </Badge>
               )}

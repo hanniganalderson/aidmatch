@@ -11,7 +11,7 @@ import { Button } from '../components/ui/button';
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { supabase } from '../lib/supabase';
-import { SubscriptionBadge } from '../components/ui/SubscriptionBadge';
+import { PlusBadge } from '../components/ui/PlusBadge';
 
 export function EnhancedSubscriptionSuccess() {
   const navigate = useNavigate();
@@ -213,7 +213,7 @@ export function EnhancedSubscriptionSuccess() {
               >
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center justify-center gap-2">
                   Welcome to AidMatch
-                  <SubscriptionBadge variant="glow" size="lg" />
+                  <PlusBadge variant="glow" size="lg" />
                 </h1>
                 
                 <p className="text-gray-600 dark:text-gray-300 text-lg max-w-lg mx-auto">

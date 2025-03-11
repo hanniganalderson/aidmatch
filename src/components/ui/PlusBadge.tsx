@@ -1,19 +1,20 @@
-// src/components/ui/SubscriptionBadge.tsx
-import { Crown, Sparkles, Zap } from 'lucide-react';
-import { motion } from 'framer-motion';
+// src/components/ui/PlusBadge.tsx
+import React from 'react';
+import { Crown, Sparkles } from 'lucide-react';
+import { motion, MotionProps } from 'framer-motion';
 import { cn } from '../../lib/utils';
 
-interface SubscriptionBadgeProps {
+interface PlusBadgeProps extends Omit<React.HTMLAttributes<HTMLDivElement>, keyof MotionProps> {
   size?: 'sm' | 'md' | 'lg';
   variant?: 'default' | 'minimal' | 'glow'; 
-  className?: string;
 }
 
-export function SubscriptionBadge({ 
+export function PlusBadge({ 
   size = 'md', 
   variant = 'default',
-  className
-}: SubscriptionBadgeProps) {
+  className,
+  ...props
+}: PlusBadgeProps) {
   // Size classes for the badge
   const sizeClasses = {
     sm: 'text-xs py-0.5 px-1.5',
@@ -46,10 +47,17 @@ export function SubscriptionBadge({
     // Animated glowing badge
     return (
       <motion.div
-        initial={{ opacity: 0.9, boxShadow: '0 0 0 rgba(124, 58, 237, 0)' }}
+        initial={{ 
+          opacity: 0.9, 
+          boxShadow: '0 0 0 rgba(124, 58, 237, 0)' 
+        }}
         animate={{ 
           opacity: 1, 
-          boxShadow: ['0 0 0px rgba(124, 58, 237, 0.3)', '0 0 8px rgba(124, 58, 237, 0.5)', '0 0 0px rgba(124, 58, 237, 0.3)']
+          boxShadow: [
+            '0 0 0px rgba(124, 58, 237, 0.3)', 
+            '0 0 8px rgba(124, 58, 237, 0.5)', 
+            '0 0 0px rgba(124, 58, 237, 0.3)'
+          ]
         }}
         transition={{ duration: 2, repeat: Infinity }}
         className={cn(
@@ -58,6 +66,7 @@ export function SubscriptionBadge({
           sizeClasses[size],
           className
         )}
+        {...props}
       >
         <Sparkles className={iconSize[size]} />
         <span>Plus</span>
@@ -74,6 +83,7 @@ export function SubscriptionBadge({
         sizeClasses[size],
         className
       )}
+      {...props}
     >
       <Crown className={iconSize[size]} />
       <span>Plus</span>

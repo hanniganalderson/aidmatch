@@ -1,47 +1,68 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe?target=deno";
+// supabase/functions/create-checkout-session/index.js
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
-const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") as string, {
-  apiVersion: "2023-10-16",
-});
-
-serve(async (req) => {
+async function createCheckoutSession(req, res) {
   try {
-    const { email } = await req.json();
+    // CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-    if (!email) {
-      return new Response("Missing email", { status: 400 });
+    // Handle preflight requests
+    if (req.method === 'OPTIONS') {
+      return res.status(200).end();
     }
 
+    // Validate request method
+    if (req.method !== 'POST') {
+      return res.status(405).json({ error: 'Method Not Allowed' });
+    }
+
+    // Extract email from request body
+    const { email } = req.body;
+
+    // Validate email
+    if (!email || typeof email !== 'string') {
+      return res.status(400).json({ 
+        error: 'Invalid or missing email' 
+      });
+    }
+
+    // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      mode: "subscription",
+      payment_method_types: ['card'],
+      mode: 'subscription',
       customer_email: email,
-      success_url: "https://aidmatch.co/success",
-      cancel_url: "https://aidmatch.co/cancel",
+      success_url: `${process.env.SITE_URL || 'https://aidmatch.co'}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.SITE_URL || 'https://aidmatch.co'}/cancel`,
       line_items: [
         {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: "AidMatch Pro Plan",
-              description: "Unlock premium scholarship matching.",
-            },
-            unit_amount: 900, // $9.00 (in cents)
-            recurring: {
-              interval: "month",
-            },
-          },
+          price: process.env.STRIPE_MONTHLY_PLAN_PRICE_ID, // Stripe price ID for your monthly plan
           quantity: 1,
         },
       ],
+      subscription_data: {
+        metadata: {
+          source: 'aidmatch_signup',
+        },
+      },
+      allow_promotion_codes: true,
     });
 
-    return new Response(JSON.stringify({ url: session.url }), {
-      headers: { "Content-Type": "application/json" },
+    // Return checkout session URL
+    return res.status(200).json({ 
+      url: session.url,
+      sessionId: session.id 
     });
+
   } catch (error) {
-    console.error(error);
-    return new Response("Error creating checkout session", { status: 500 });
+    console.error('Checkout session creation error:', error);
+
+    return res.status(500).json({ 
+      error: 'Failed to create checkout session',
+      details: error.message 
+    });
   }
-});
+}
+
+module.exports = createCheckoutSession;

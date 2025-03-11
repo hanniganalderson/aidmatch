@@ -13,7 +13,7 @@ import { useSubscription } from '../contexts/SubscriptionContext';
 import { PlusBadge } from './ui/PlusBadge';
 import { useInView } from 'react-intersection-observer';
 // Import checkout function for upgrading
-import { createCheckoutSession } from '../lib/checkout';
+import { createCheckoutSession } from '../lib/subscriptionService';
 
 export function Settings() {
   const { user, signOut } = useAuth();

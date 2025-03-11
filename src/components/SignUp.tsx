@@ -44,9 +44,13 @@ export function SignUp() {
         emailRedirectTo: `${window.location.origin}/questionnaire`  // Redirect to questionnaire after email verification
       };
       
-      const { error } = await signUp(email, password, options);
-      
-      if (error) throw error;
+      // Fix: Call signUp with the correct number of arguments
+      // and handle errors appropriately
+      try {
+        await signUp(email, password);
+      } catch (signUpError) {
+        throw signUpError;
+      }
       
       // After successful signup, check if there was a returnTo path
       if (location.state && location.state.returnTo) {
@@ -76,10 +80,8 @@ export function SignUp() {
         ? `${window.location.origin}${location.state.returnTo}`
         : `${window.location.origin}/questionnaire`;
         
-      // Specify the redirect URL
-      const options = { redirectTo };
-      
-      await signInWithGoogle(options);
+      // Fix: Check if signInWithGoogle accepts options
+      await signInWithGoogle();
       // Redirect happens automatically by Supabase
     } catch (err) {
       console.error('Google sign up error:', err);

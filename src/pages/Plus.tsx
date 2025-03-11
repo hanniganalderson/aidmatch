@@ -18,10 +18,10 @@ import {
 
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { createCheckoutSession } from '../lib/checkout';
+import { createCheckoutSession } from '../lib/subscriptionService';
 import { Button } from '../components/ui/button';
 
-export function Pricing(): JSX.Element {
+export function Plus(): JSX.Element {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
@@ -73,7 +73,7 @@ export function Pricing(): JSX.Element {
   const handleUpgrade = async () => {
     // If user isn't logged in, redirect to sign in
     if (!user) {
-      navigate('/signin', { state: { returnTo: '/pricing' } });
+      navigate('/signin', { state: { returnTo: '/plus'} });
       return;
     }
     

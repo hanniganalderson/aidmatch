@@ -41,7 +41,7 @@ export function Header() {
 
   const navItems = [
     { label: 'Match', href: '/questionnaire', description: 'Find scholarships' },
-    { label: 'Pricing', href: '/pricing', description: 'Plans & pricing' },
+    { label: 'Plus', href: '/plus', description: 'Plans & pricing' },
     { label: 'About', href: '/about', description: 'About AidMatch' },
   ];
 

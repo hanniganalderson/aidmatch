@@ -3,8 +3,8 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Lock, Sparkles, Crown } from 'lucide-react';
-import { useSubscription } from '../contexts/SubscriptionContext';
-import { Button } from '.components/ui/button';
+import { useSubscription } from '../../contexts/SubscriptionContext';
+import { Button } from './button';
 
 interface PremiumFeatureGateProps {
   feature: string;

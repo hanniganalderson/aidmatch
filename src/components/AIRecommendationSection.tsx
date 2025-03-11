@@ -6,7 +6,7 @@ import { Sparkles, AlertCircle, Crown, RefreshCw, Award, Zap, ArrowRight } from 
 import { PremiumFeatureGate } from './ui/premiumFeatureGate';
 import { FeatureLimitIndicator } from './ui/FeatureLimitIndicator';
 import { useFeatureUsage, FeatureName } from '../lib/feature-usage';
-import { getAIScholarshipRecommendations } from '../lib/AIScholarshipSection';
+import { getAIScholarshipRecommendations } from '../lib/AIScholarshipService';
 import { Button } from './ui/button';
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../contexts/SubscriptionContext';

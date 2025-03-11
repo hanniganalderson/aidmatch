@@ -48,8 +48,13 @@ export function SignUp() {
       
       if (error) throw error;
       
-      // On successful signup, redirect to questionnaire
-      navigate('/questionnaire');
+      // After successful signup, check if there was a returnTo path
+      if (location.state && location.state.returnTo) {
+        navigate(location.state.returnTo);
+      } else {
+        // Otherwise go to default onboarding flow
+        navigate('/questionnaire');
+      }
     } catch (err) {
       console.error('Sign up error:', err);
       if (err instanceof Error) {
@@ -66,10 +71,13 @@ export function SignUp() {
     setError(null);
     setGoogleLoading(true);
     try {
-      // Specify the redirect URL to go to questionnaire after Google auth
-      const options = {
-        redirectTo: `${window.location.origin}/questionnaire`
-      };
+      // Determine the redirect URL based on the location state
+      const redirectTo = location.state?.returnTo
+        ? `${window.location.origin}${location.state.returnTo}`
+        : `${window.location.origin}/questionnaire`;
+        
+      // Specify the redirect URL
+      const options = { redirectTo };
       
       await signInWithGoogle(options);
       // Redirect happens automatically by Supabase

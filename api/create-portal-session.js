@@ -1,50 +1,46 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe?target=deno";
+// api/create-portal-session.js
+const Stripe = require('stripe');
 
-const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") as string, {
-  apiVersion: "2023-10-16",
-});
+module.exports = async (req, res) => {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-serve(async (req) => {
-  const headers = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-  };
-  
   // Handle preflight requests
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers, status: 204 });
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
   }
-  
+
+  // Only allow POST requests
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
   try {
-    const { customer_id } = await req.json();
+    // Initialize Stripe with the secret key
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    
+    // Get customer ID from request body
+    const { customer_id } = req.body;
 
     if (!customer_id) {
-      return new Response(JSON.stringify({ error: "Missing customer_id" }), { 
-        status: 400,
-        headers: { ...headers, "Content-Type": "application/json" }
-      });
+      return res.status(400).json({ error: 'Missing customer_id' });
     }
+
+    // Determine the origin for return URL
+    const origin = req.headers.origin || 'https://aidmatch.co';
 
     // Create a billing portal session for the customer
     const session = await stripe.billingPortal.sessions.create({
       customer: customer_id,
-      return_url: `${req.headers.get("origin") || "https://aidmatch.co"}/account/billing`,
+      return_url: `${origin}/account/billing`,
     });
 
-    return new Response(JSON.stringify({ url: session.url }), {
-      headers: { ...headers, "Content-Type": "application/json" },
-      status: 200,
-    });
+    // Return session URL
+    return res.status(200).json({ url: session.url });
   } catch (error) {
-    console.error("Portal session error:", error);
-    return new Response(
-      JSON.stringify({ error: "Failed to create portal session" }),
-      {
-        status: 500,
-        headers: { ...headers, "Content-Type": "application/json" },
-      }
-    );
+    console.error('Portal session error:', error);
+    return res.status(500).json({ error: 'Failed to create portal session' });
   }
-});
+};

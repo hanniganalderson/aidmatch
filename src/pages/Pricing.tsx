@@ -81,10 +81,25 @@ export function Pricing(): JSX.Element {
     setError(null);
     
     try {
+      console.log('Starting checkout process for email:', user.email);
+      
+      // Ensure we have a valid email before proceeding
+      if (!user.email) {
+        throw new Error('User email not available');
+      }
+      
       await createCheckoutSession(user.email);
+      
+      // If createCheckoutSession doesn't throw, it will redirect the user
+      // We shouldn't reach this code, but just in case:
+      console.log('Checkout initiated successfully');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
       console.error('Upgrade error:', err);
+      setError(
+        err instanceof Error 
+          ? err.message 
+          : 'An unknown error occurred during checkout'
+      );
     } finally {
       setSubmitting(false);
     }

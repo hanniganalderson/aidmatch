@@ -32,7 +32,13 @@ export function SignIn() {
 
     try {
       await signIn(email, password);
-      navigate('/dashboard');
+      
+      // Check if there's a returnTo path in the location state
+      if (location.state && location.state.returnTo) {
+        navigate(location.state.returnTo);
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       console.error('Sign in error:', err);
       if (err instanceof Error) {
@@ -48,9 +54,15 @@ export function SignIn() {
   const handleGoogleSignIn = async () => {
     setError(null);
     setGoogleLoading(true);
+    
     try {
-      await signInWithGoogle();
-      // Redirect happens automatically by Supabase
+      // Check if there's a returnTo in the location state
+      const options = location.state?.returnTo 
+        ? { redirectTo: `${window.location.origin}${location.state.returnTo}` }
+        : undefined;
+        
+      await signInWithGoogle(options);
+      // Redirect will happen automatically by Supabase
     } catch (err) {
       console.error('Google sign in error:', err);
       if (err instanceof Error) {

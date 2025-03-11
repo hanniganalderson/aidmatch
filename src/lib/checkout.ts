@@ -18,11 +18,24 @@ export async function createCheckoutSession(email: string): Promise<void> {
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to create checkout session');
+      // Try to parse error response as JSON
+      let errorMessage;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || 'Unknown error occurred';
+      } catch (e) {
+        // If can't parse JSON, use text or status
+        const errorText = await response.text();
+        errorMessage = errorText || `Error: ${response.status}`;
+      }
+      throw new Error(errorMessage);
     }
 
-    const { url } = await response.json();
+    const data = await response.json();
+    
+    if (!data.url) {
+      throw new Error('No checkout URL returned from server');
+    }
     
     // Track the checkout initiation event
     try {
@@ -37,7 +50,7 @@ export async function createCheckoutSession(email: string): Promise<void> {
     }
 
     // Redirect to Stripe Checkout
-    window.location.href = url;
+    window.location.href = data.url;
   } catch (error) {
     console.error('Checkout error:', error);
     throw error;

@@ -1,5 +1,5 @@
 // src/lib/AIScholarshipService.ts
-import type { UserProfile, UserAnswers, ScoredScholarship } from '../types';
+import type { UserAnswers, ScoredScholarship } from '../types';
 import { supabase } from './supabase';
 
 // Helper function to get OpenAI API key from environment or database

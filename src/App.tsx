@@ -12,13 +12,19 @@ import { Settings } from './components/Settings';
 import { SavedScholarships } from './components/SavedScholarships';
 import { InputScholarship } from './components/InputScholarship';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { supabase } from './lib/supabase'; // Import supabase
+import { supabase } from './lib/supabase';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
 import { Pricing } from './pages/Pricing';
-import { PrivacyPolicy } from './pages/PrivacyPolicy';
-import { TermsOfService } from './pages/TermsOfService';
+import SubscriptionSuccess from './pages/SubscriptionSuccess';
+import SubscriptionCancel from './pages/SubscriptionCancel';
+import BillingPage from './pages/BillingPage';
 import { clearOAuthErrorParams, processHashErrors } from './lib/auth-utils';
 import type { UserAnswers } from './types';
 import { ProtectedRoute } from './components/ProtectedRoute';
+
+// Import animation styles
+import './styles/animations.css';
 
 function AppContent() {
   const { user } = useAuth();
@@ -135,6 +141,7 @@ function AppContent() {
   return (
     <Layout>
       <Routes>
+        {/* Public routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
@@ -142,6 +149,25 @@ function AppContent() {
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
+        
+        {/* Subscription routes */}
+        <Route path="/success" element={
+          <ProtectedRoute requireAuth={true}>
+            <SubscriptionSuccess />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/cancel" element={
+          <ProtectedRoute requireAuth={false}>
+            <SubscriptionCancel />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/account/billing" element={
+          <ProtectedRoute requireAuth={true}>
+            <BillingPage />
+          </ProtectedRoute>
+        } />
         
         {/* Questionnaire can be accessed with or without login */}
         <Route path="/questionnaire" element={

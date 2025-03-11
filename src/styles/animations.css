@@ -1,0 +1,56 @@
+/* Animation keyframes for the pricing page and subscription components */
+
+@keyframes drift {
+    0% { transform: translate(0, 0); }
+    50% { transform: translate(-15px, 20px); }
+    100% { transform: translate(0, 0); }
+  }
+  
+  @keyframes drift-slow {
+    0% { transform: translate(0, 0); }
+    50% { transform: translate(15px, -20px); }
+    100% { transform: translate(0, 0); }
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+  
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  
+  /* Animation utility classes */
+  .animate-drift {
+    animation: drift 15s ease-in-out infinite;
+  }
+  
+  .animate-drift-slow {
+    animation: drift-slow 18s ease-in-out infinite;
+  }
+  
+  .animate-pulse-slow {
+    animation: pulse 3s ease-in-out infinite;
+  }
+  
+  .animate-shimmer {
+    background: linear-gradient(90deg, 
+      rgba(255, 255, 255, 0) 0%, 
+      rgba(255, 255, 255, 0.05) 50%, 
+      rgba(255, 255, 255, 0) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+  
+  /* Dark mode variant for shimmer */
+  .dark .animate-shimmer {
+    background: linear-gradient(90deg, 
+      rgba(255, 255, 255, 0) 0%, 
+      rgba(255, 255, 255, 0.03) 50%, 
+      rgba(255, 255, 255, 0) 100%
+    );
+    background-size: 200% 100%;
+  }

@@ -2,7 +2,8 @@
 import Stripe from 'stripe';
 
 // Your actual price ID from Stripe dashboard
-const PRICE_ID = "price_1R1XL5Jpo3xPmFJP5WfjqnOZ";
+const PRICE_ID = "price_1R1YV0Jpo3xPmFJPjtV3iy6p"
+//"price_1R1XL5Jpo3xPmFJP5WfjqnOZ";
 
 export default async function handler(req, res) {
   // Set CORS headers

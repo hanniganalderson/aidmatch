@@ -1,11 +1,7 @@
-// api/create-portal-session.ts
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+// api/create-portal-session.js
 import Stripe from 'stripe';
 
-export default async function handler(
-  req: VercelRequest, 
-  res: VercelResponse
-) {
+export default async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');

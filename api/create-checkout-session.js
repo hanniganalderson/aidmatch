@@ -1,14 +1,10 @@
-// api/create-checkout-session.ts
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+// api/create-checkout-session.js
 import Stripe from 'stripe';
 
 // Your actual price ID from Stripe dashboard
 const PRICE_ID = "price_1R1XL5Jpo3xPmFJP5WfjqnOZ";
 
-export default async function handler(
-  req: VercelRequest, 
-  res: VercelResponse
-) {
+export default async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');

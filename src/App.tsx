@@ -1,11 +1,12 @@
-// src/App.tsx (updated with ErrorBoundary)
+// src/App.tsx (updated with Simplified Dashboard)
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useState, useEffect } from 'react';
 import { Layout } from './components/Layout';
 import { LandingPage } from './components/LandingPage';
 import { Questionnaire } from './components/Questionnaire';
 import { Results } from './components/Results';
-import { Dashboard } from './components/Dashboard';
+// Import the simplified dashboard instead
+import { MinimalDashboard } from './components/MinimalDashboard';
 import { SignIn } from './components/SignIn';
 import { SignUp } from './components/SignUp';
 import { About } from './components/About';
@@ -193,10 +194,11 @@ function AppContent() {
           </ProtectedRoute>
         } />
         
+        {/* Use simplified dashboard instead */}
         <Route path="/dashboard" element={
           <ErrorBoundary>
             <ProtectedRoute requireAuth={false}>
-              <Dashboard userAnswers={answers} />
+              <MinimalDashboard userAnswers={answers} />
             </ProtectedRoute>
           </ErrorBoundary>
         } />

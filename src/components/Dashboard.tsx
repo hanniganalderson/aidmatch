@@ -277,7 +277,7 @@ export function Dashboard({ userAnswers }: DashboardProps) {
           <div className="flex items-center gap-2">
             {!isSubscribed && (
               <Button
-                onClick={() => navigate('/pricing')}
+                onClick={() => navigate('/plus')}
                 className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:opacity-90"
               >
                 <Sparkles className="w-4 h-4 mr-2" />
@@ -332,7 +332,7 @@ export function Dashboard({ userAnswers }: DashboardProps) {
                 </p>
               </div>
               <Button
-                onClick={() => navigate('/pricing')}
+                onClick={() => navigate('/plus')}
                 className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:opacity-90"
               >
                 See Plans
@@ -534,7 +534,7 @@ export function Dashboard({ userAnswers }: DashboardProps) {
                         blurChildren={false}
                       >
                         <Button
-                          onClick={() => navigate('/pricing')}
+                          onClick={() => navigate('/plus')}
                           size="sm"
                           className="text-xs bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:opacity-90"
                         >

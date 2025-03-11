@@ -1,0 +1,39 @@
+<svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#10B981" /> <!-- Primary green -->
+      <stop offset="100%" stopColor="#0EA5E9" /> <!-- Blue accent -->
+    </linearGradient>
+  </defs>
+  
+  <!-- Graduation cap shape -->
+  <path 
+    d="M18,4 L4,12 L18,20 L32,12 L18,4 Z" 
+    fill="url(#logoGradient)"
+  />
+  
+  <!-- Cap bottom -->
+  <path 
+    d="M25,12 L25,22 C25,24.5 22,27 18,27 C14,27 11,24.5 11,22 L11,12"
+    fill="url(#logoGradient)"
+    strokeLinejoin="round"
+  />
+  
+  <!-- Tassel -->
+  <path 
+    d="M25,12 C27,14.5 27,19 25,22" 
+    stroke="#0EA5E9" 
+    strokeWidth="1.5" 
+    fill="none" 
+    strokeLinecap="round"
+  />
+  
+  <!-- Dollar sign -->
+  <path 
+    d="M18,11 L18,19 M15.5,13 C15.5,11.5 20.5,11.5 20.5,13 C20.5,15 15.5,15 15.5,17 C15.5,18.5 20.5,18.5 20.5,17" 
+    stroke="white" 
+    strokeWidth="2" 
+    strokeLinecap="round"
+    fill="none"
+  />
+</svg>

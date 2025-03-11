@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Award, Search, ChevronLeft, ChevronRight, Sparkles, AlertCircle, ChevronUp, ChevronDown } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useScholarshipMatching, useSavedScholarships } from '../hooks/useScholarshipMatching';
-import { getAIScholarshipRecommendations, getCachedAIScholarships } from '../lib/AIScholarshipService';
+import { getAIScholarshipRecommendations, getCachedAIScholarships } from '../lib/AIScholarshipSection';
 import { useInView } from 'react-intersection-observer';
 import type { ScoredScholarship, UserAnswers, ScholarshipFilters } from '../types';
 import { useNavigate, useLocation } from 'react-router-dom';

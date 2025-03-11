@@ -6,48 +6,68 @@ import { supabase } from '../lib/supabase';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requireAuth?: boolean; // New prop to determine if authentication is required
+  requireAuth?: boolean; // Prop to determine if authentication is required
+  skipQuestionnaireCheck?: boolean; // New prop to skip questionnaire check for certain routes
 }
 
-export function ProtectedRoute({ children, requireAuth = true }: ProtectedRouteProps) {
+export function ProtectedRoute({ 
+  children, 
+  requireAuth = true,
+  skipQuestionnaireCheck = false
+}: ProtectedRouteProps) {
   const { user, loading } = useAuth();
   const location = useLocation();
   const [profileLoading, setProfileLoading] = useState(true);
   const [hasCompletedQuestionnaire, setHasCompletedQuestionnaire] = useState(false);
+  const [hasSubscription, setHasSubscription] = useState(false);
 
-  // Check if the user has completed the questionnaire
+  // Check if the user has completed the questionnaire and subscription status
   useEffect(() => {
-    const checkQuestionnaireStatus = async () => {
+    const checkUserStatus = async () => {
       if (!user) {
         setProfileLoading(false);
         return;
       }
 
       try {
-        const { data, error } = await supabase
+        // Check profile status
+        const { data: profileData, error: profileError } = await supabase
           .from('user_profiles')
           .select('*')
           .eq('user_id', user.id)
           .single();
 
-        if (error && error.code !== 'PGRST116') {
-          console.error('Error checking user profile:', error);
+        if (profileError && profileError.code !== 'PGRST116') {
+          console.error('Error checking user profile:', profileError);
+        }
+
+        // Check subscription status
+        const { data: subscriptionData, error: subscriptionError } = await supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .single();
+
+        if (subscriptionError && subscriptionError.code !== 'PGRST116') {
+          console.error('Error checking subscription:', subscriptionError);
         }
 
         // If profile exists and has some questionnaire data, consider it completed
-        const hasCompletedQuestionnaire = !!(data && 
-          (data.education_level || data.major || data.gpa || data.location));
+        const hasCompletedQuestionnaire = !!(profileData && 
+          (profileData.education_level || profileData.major || profileData.gpa || profileData.location));
         
         setHasCompletedQuestionnaire(hasCompletedQuestionnaire);
+        setHasSubscription(!!subscriptionData);
       } catch (err) {
-        console.error('Error fetching profile data:', err);
+        console.error('Error fetching user data:', err);
       } finally {
         setProfileLoading(false);
       }
     };
 
     if (user && !loading) {
-      checkQuestionnaireStatus();
+      checkUserStatus();
     } else {
       setProfileLoading(false);
     }
@@ -68,11 +88,22 @@ export function ProtectedRoute({ children, requireAuth = true }: ProtectedRouteP
     return <Navigate to="/signin" state={{ from: location.pathname }} replace />;
   }
 
-  // Redirect to questionnaire if authenticated but hasn't completed it
-  // Skip this check if user is already on the questionnaire page or if auth is not required
-  if (user && !hasCompletedQuestionnaire && 
+  // Special cases where we should skip the questionnaire check
+  const isSuccessPage = location.pathname === '/success';
+  const isCancelPage = location.pathname === '/cancel';
+  const isBillingPage = location.pathname === '/account/billing';
+  
+  // If it's a special page or we've explicitly set skipQuestionnaireCheck, don't check questionnaire
+  const shouldSkipQuestionnaireCheck = skipQuestionnaireCheck || isSuccessPage || isCancelPage || isBillingPage;
+
+  // Check if they need to be redirected to the questionnaire
+  // Skip this check if user is already on the questionnaire page, if auth is not required,
+  // or if the current route is in our skip list
+  if (user && 
+      !hasCompletedQuestionnaire && 
       !location.pathname.includes('/questionnaire') && 
-      requireAuth) {
+      requireAuth && 
+      !shouldSkipQuestionnaireCheck) {
     return <Navigate to="/questionnaire" replace />;
   }
 

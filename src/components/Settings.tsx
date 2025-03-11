@@ -1,18 +1,24 @@
+// src/components/Settings.tsx
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Save, User, Lock, Bell, Moon, Sun, Trash2, LogOut, Check, 
+  Save, User, Lock, Bell, Moon, Sun, Trash2, LogOut, 
   AlertCircle, Settings as SettingsIcon, Shield, Sparkles, ArrowRight,
-  LucideIcon
+  LucideIcon, CreditCard, Crown, Zap, Check
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
+import { useSubscription } from '../contexts/SubscriptionContext';
+import { PlusBadge } from './ui/PlusBadge';
 import { useInView } from 'react-intersection-observer';
+// Import checkout function for upgrading
+import { createCheckoutSession } from '../lib/checkout';
 
 export function Settings() {
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { isSubscribed, subscription } = useSubscription();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('account');
   const [saved, setSaved] = useState(false);
@@ -33,6 +39,26 @@ export function Settings() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState<string | null>(null);
   
+  // Animation states
+  const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.1 });
+  
+  useEffect(() => {
+    // (No changes here)
+  }, []);
+
+  // New: Handle Upgrade - if user is not signed in, redirect them to sign in; if signed in, initiate checkout.
+  const handleUpgrade = async () => {
+    try {
+      if (!user?.email) {
+        navigate('/signin'); // Change this to your sign-in route if needed.
+        return;
+      }
+      await createCheckoutSession(user.email);
+    } catch (error) {
+      console.error('Upgrade error:', error);
+    }
+  };
+
   const handleSave = () => {
     setSaving(true);
     // Simulate API call
@@ -80,8 +106,6 @@ export function Settings() {
     }
   };
 
-  const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.1 });
-
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -117,6 +141,21 @@ export function Settings() {
     );
   };
 
+  // Format next billing date
+  const formatNextBillingDate = () => {
+    if (!subscription?.updated_at) return 'Unknown';
+    
+    const lastUpdated = new Date(subscription.updated_at);
+    const nextBilling = new Date(lastUpdated);
+    nextBilling.setMonth(nextBilling.getMonth() + 1);
+    
+    return nextBilling.toLocaleDateString(undefined, { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  };
+
   return (
     <div className="min-h-screen py-20 bg-gradient-to-br from-blue-50 via-indigo-50 to-white dark:from-gray-900 dark:via-indigo-950/10 dark:to-gray-900">
       <div className="absolute inset-0 bg-[radial-gradient(rgba(29,78,216,0.03)_1px,transparent_1px)] dark:bg-[radial-gradient(rgba(29,78,216,0.02)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
@@ -148,7 +187,7 @@ export function Settings() {
             variants={itemVariants}
             className="bg-white/95 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-xl"
           >
-            {/* Tab navigation with animated indicator */}
+            {/* Tab navigation */}
             <div className="flex border-b border-gray-200 dark:border-gray-700 relative overflow-x-auto">
               <button
                 onClick={() => setActiveTab('account')}
@@ -215,6 +254,24 @@ export function Settings() {
                 {theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
                 Appearance
                 {activeTab === 'appearance' && (
+                  <motion.div 
+                    layoutId="tab-indicator"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary-500 to-accent-500"
+                  />
+                )}
+              </button>
+              
+              <button
+                onClick={() => setActiveTab('subscription')}
+                className={`relative flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors ${
+                  activeTab === 'subscription' 
+                    ? 'text-primary-500' 
+                    : 'text-gray-600 dark:text-gray-400 hover:text-primary-500 dark:hover:text-primary-400'
+                }`}
+              >
+                <Crown className="w-4 h-4" />
+                Subscription
+                {activeTab === 'subscription' && (
                   <motion.div 
                     layoutId="tab-indicator"
                     className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary-500 to-accent-500"
@@ -680,12 +737,137 @@ export function Settings() {
                       </div>
                     </div>
                   </motion.div>
-                )
-              }
-                </AnimatePresence>
+                )}
+                
+                {activeTab === 'subscription' && (
+                  <motion.div
+                    key="subscription"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3 }}
+                    className="space-y-6"
+                  >
+                    {renderSectionTitle(Crown, "Subscription Management")}
+                    
+                    {/* If not subscribed, show upgrade card; if subscribed, show management details */}
+                    {!isSubscribed ? (
+                      <div className="p-8">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Crown className="w-6 h-6 text-primary-400" />
+                          <h2 className="text-xl font-bold text-white">Pro Plan</h2>
+                        </div>
+                        
+                        <div className="flex items-end gap-1 mb-4">
+                          <span className="text-4xl font-bold text-white">$9</span>
+                          <span className="text-gray-400 text-sm">/month</span>
+                        </div>
+                        
+                        <p className="text-gray-300 mb-6">
+                          Upgrade to unlock advanced features for more scholarship opportunities and insights.
+                        </p>
+                        
+                        <button
+                          onClick={handleUpgrade}
+                          className="w-full py-3 px-4 bg-gradient-to-r from-primary-500 to-accent-500 hover:opacity-90 text-white rounded-lg text-center font-medium transition-all flex items-center justify-center gap-2"
+                        >
+                          <Zap className="w-5 h-5" />
+                          {user?.email ? "Upgrade Now" : "Sign In to Upgrade"}
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="p-5 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-100 dark:border-indigo-700/30">
+                        <div className="flex items-center justify-between mb-6">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-full bg-indigo-100 dark:bg-indigo-800/50">
+                              <Crown className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-semibold text-gray-900 dark:text-white">AidMatch Plus</h3>
+                                <PlusBadge size="sm" />
+                              </div>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">
+                                Your subscription is active
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <motion.button
+                            whileHover={{ scale: 1.02, translateY: -2 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => navigate('/account/billing')}
+                            className="px-4 py-2 rounded-lg bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-700/50 text-sm flex items-center gap-2 shadow-sm hover:shadow-md transition-all"
+                          >
+                            <CreditCard className="w-4 h-4" />
+                            Manage Subscription
+                          </motion.button>
+                        </div>
+                        
+                        <div className="mt-4 grid grid-cols-2 gap-6">
+                          <div className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Plan</p>
+                            <p className="font-medium text-gray-900 dark:text-white">Monthly ($9.00/month)</p>
+                          </div>
+                          
+                          <div className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Next Billing Date</p>
+                            <p className="font-medium text-gray-900 dark:text-white">
+                              {formatNextBillingDate()}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                          <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <h4 className="font-medium text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                              <Sparkles className="w-4 h-4 text-amber-500" />
+                              Premium Features
+                            </h4>
+                            <ul className="space-y-2">
+                              <li className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                                <Check className="w-4 h-4 text-green-500" />
+                                Unlimited AI recommendations
+                              </li>
+                              <li className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                                <Check className="w-4 h-4 text-green-500" />
+                                Enhanced essay assistance
+                              </li>
+                              <li className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                                <Check className="w-4 h-4 text-green-500" />
+                                Priority support
+                              </li>
+                              <li className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                                <Check className="w-4 h-4 text-green-500" />
+                                Unlimited saved scholarships
+                              </li>
+                            </ul>
+                          </div>
+                          
+                          <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <h4 className="font-medium text-gray-900 dark:text-white mb-3">Subscription Details</h4>
+                            <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                              Your subscription began on {subscription?.created_at 
+                                ? new Date(subscription.created_at).toLocaleDateString(undefined, { 
+                                    year: 'numeric', 
+                                    month: 'long', 
+                                    day: 'numeric' 
+                                  }) 
+                                : 'Unknown'}
+                            </p>
+                            <p className="text-sm text-gray-600 dark:text-gray-300">
+                              Manage your payment methods and view your billing history from the billing portal.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
             
-            {/* Sign out option at the bottom */}
+            {/* Sign out section */}
             <div className="px-8 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 rounded-b-xl">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -701,8 +883,11 @@ export function Settings() {
                     </div>
                   )}
                   <div>
-                    <div className="font-medium text-gray-900 dark:text-white">
-                      {name || 'User'}
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {name || 'User'}
+                      </span>
+                      {isSubscribed && <PlusBadge size="sm" />}
                     </div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">
                       {email}

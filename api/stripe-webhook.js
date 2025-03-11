@@ -17,7 +17,7 @@ async function getRawBody(req) {
 }
 
 // Handler for checkout session completion
-async function handleCheckoutSessionCompleted(session, supabase) {
+async function handleCheckoutSessionCompleted(session, supabase, stripe) {
   try {
     // Extract data from the session
     const customerId = session.customer;
@@ -30,34 +30,53 @@ async function handleCheckoutSessionCompleted(session, supabase) {
 
     console.log(`Processing subscription for ${customerEmail}`);
     
+    // Fetch the subscription from Stripe to get more details
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    
     // Find the user by email
-    const { data, error } = await supabase
+    const { data: userData, error: userError } = await supabase
       .from('users')
       .select('id')
       .eq('email', customerEmail)
       .limit(1);
 
-    if (error) {
-      throw new Error(`Error finding user: ${error.message}`);
+    if (userError) {
+      throw new Error(`Error finding user: ${userError.message}`);
     }
     
-    if (!data || data.length === 0) {
-      throw new Error(`No user found with email: ${customerEmail}`);
+    if (!userData || userData.length === 0) {
+      // If user not found, try getting it from auth users
+      const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
+      
+      if (authError) {
+        throw new Error(`Error listing users: ${authError.message}`);
+      }
+      
+      const user = authData.users.find(u => u.email === customerEmail);
+      
+      if (!user) {
+        throw new Error(`No user found with email: ${customerEmail}`);
+      }
+      
+      // Use the user ID from auth
+      var userId = user.id;
+    } else {
+      var userId = userData[0].id;
     }
-    
-    const userId = data[0].id;
     
     // Create or update subscription record
     const { error: subscriptionError } = await supabase
       .from('subscriptions')
       .upsert({
         user_id: userId,
-        status: "active",
+        status: subscription.status,
         plan_type: 'plus',
         stripe_customer_id: customerId,
         stripe_subscription_id: subscriptionId,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id' // Explicitly specify conflict resolution field
       });
 
     if (subscriptionError) {
@@ -226,13 +245,18 @@ export default async function handler(req, res) {
     
     // Initialize Supabase client
     const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Using service role key for admin operations
     
     if (!supabaseUrl || !supabaseKey) {
       throw new Error('Missing Supabase credentials');
     }
     
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
     
     // Verify the webhook signature
     const event = stripe.webhooks.constructEvent(
@@ -246,7 +270,7 @@ export default async function handler(req, res) {
     // Handle specific event types
     switch (event.type) {
       case 'checkout.session.completed': {
-        await handleCheckoutSessionCompleted(event.data.object, supabase);
+        await handleCheckoutSessionCompleted(event.data.object, supabase, stripe);
         break;
       }
       

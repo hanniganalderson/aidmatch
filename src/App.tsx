@@ -12,6 +12,7 @@ import { Settings } from './components/Settings';
 import { SavedScholarships } from './components/SavedScholarships';
 import { InputScholarship } from './components/InputScholarship';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { SubscriptionProvider } from './contexts/SubscriptionContext';
 import { supabase } from './lib/supabase';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
@@ -150,21 +151,21 @@ function AppContent() {
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
         
-        {/* Subscription routes */}
+        {/* Subscription routes - with skipQuestionnaireCheck */}
         <Route path="/success" element={
-          <ProtectedRoute requireAuth={true}>
+          <ProtectedRoute requireAuth={true} skipQuestionnaireCheck={true}>
             <SubscriptionSuccess />
           </ProtectedRoute>
         } />
         
         <Route path="/cancel" element={
-          <ProtectedRoute requireAuth={false}>
+          <ProtectedRoute requireAuth={false} skipQuestionnaireCheck={true}>
             <SubscriptionCancel />
           </ProtectedRoute>
         } />
         
         <Route path="/account/billing" element={
-          <ProtectedRoute requireAuth={true}>
+          <ProtectedRoute requireAuth={true} skipQuestionnaireCheck={true}>
             <BillingPage />
           </ProtectedRoute>
         } />
@@ -217,9 +218,11 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <AppContent />
-      </Router>
+      <SubscriptionProvider>
+        <Router>
+          <AppContent />
+        </Router>
+      </SubscriptionProvider>
     </AuthProvider>
   );
 }

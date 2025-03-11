@@ -2,8 +2,7 @@
 import Stripe from 'stripe';
 
 // Your actual price ID from Stripe dashboard
-const PRICE_ID = "price_1R1YV0Jpo3xPmFJPjtV3iy6p"
-//"price_1R1XL5Jpo3xPmFJP5WfjqnOZ";
+const PRICE_ID = "price_1R1YV0Jpo3xPmFJPjtV3iy6p";
 
 export default async function handler(req, res) {
   // Set CORS headers
@@ -42,12 +41,12 @@ export default async function handler(req, res) {
     // Determine the origin for success/cancel URLs
     const origin = req.headers.origin || 'https://aidmatch.co';
 
-    // Create checkout session
+    // Create checkout session with absolute URLs and added session ID parameter
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'subscription',
       customer_email: email,
-      success_url: `${origin}/success`,
+      success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/cancel`,
       line_items: [
         {

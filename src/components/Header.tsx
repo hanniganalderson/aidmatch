@@ -1,12 +1,16 @@
+// src/components/Header.tsx
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings, LayoutDashboard, Menu, X, Moon, Sun, User, LogOut } from 'lucide-react';
+import { Settings, LayoutDashboard, Menu, X, Moon, Sun, User, LogOut, Crown } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useSubscription } from '../contexts/SubscriptionContext';
+import { PlusBadge } from './ui/PlusBadge';
 
 export function Header() {
   const { user, signOut, getUserDisplayName } = useAuth();
+  const { isSubscribed } = useSubscription();
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -192,9 +196,12 @@ export function Header() {
                   <div className="w-6 h-6 rounded-full bg-primary-500 text-white flex items-center justify-center overflow-hidden text-sm font-medium">
                     {displayName ? displayName.charAt(0).toUpperCase() : 'U'}
                   </div>
-                  <span className="text-sm font-medium">
-                    {displayName || 'User'}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-medium">
+                      {displayName || 'User'}
+                    </span>
+                    {isSubscribed && <PlusBadge size="sm" />}
+                  </div>
                 </button>
 
                 <AnimatePresence>
@@ -207,9 +214,12 @@ export function Header() {
                       className="absolute right-0 mt-2 w-60 rounded-lg bg-gray-900 shadow-lg border border-gray-700 overflow-hidden z-50"
                     >
                       <div className="px-4 py-3 border-b border-gray-700">
-                        <p className="text-sm font-medium text-white">
-                          Hi, {displayName || 'User'}
-                        </p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium text-white">
+                            Hi, {displayName || 'User'}
+                          </p>
+                          {isSubscribed && <PlusBadge size="sm" />}
+                        </div>
                         <p className="text-xs text-gray-400 truncate">
                           {user?.email || ''}
                         </p>
@@ -229,6 +239,15 @@ export function Header() {
                           <Settings className="w-4 h-4" />
                           Settings
                         </Link>
+                        {isSubscribed && (
+                          <Link
+                            to="/account/billing"
+                            className="flex items-center gap-2 px-4 py-2 text-sm text-gray-200 hover:bg-gray-700"
+                          >
+                            <Crown className="w-4 h-4 text-amber-400" />
+                            Manage Subscription
+                          </Link>
+                        )}
                         <button
                           onClick={handleSignOut}
                           className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-200 hover:bg-gray-700"
@@ -275,6 +294,11 @@ export function Header() {
             >
               <LayoutDashboard className="w-5 h-5" />
             </Link>
+            {isSubscribed && (
+              <div className="flex items-center">
+                <PlusBadge size="sm" />
+              </div>
+            )}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-lg bg-gray-800 text-gray-300 hover:bg-gray-700 transition-colors"
@@ -311,13 +335,25 @@ export function Header() {
                 {user ? (
                   <>
                     <div className="px-4 py-3 border-t border-gray-700">
-                      <p className="text-sm font-medium text-white">
-                        Hi, {displayName || 'User'}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-white">
+                          Hi, {displayName || 'User'}
+                        </p>
+                        {isSubscribed && <PlusBadge size="sm" />}
+                      </div>
                       <p className="text-xs text-gray-400 truncate">
                         {user.email || ''}
                       </p>
                     </div>
+                    {isSubscribed && (
+                      <Link
+                        to="/account/billing"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-200 hover:bg-gray-700"
+                      >
+                        <Crown className="w-4 h-4 text-amber-400" />
+                        Manage Subscription
+                      </Link>
+                    )}
                     <button
                       onClick={handleSignOut}
                       className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-200 hover:bg-gray-700"

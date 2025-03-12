@@ -31,13 +31,13 @@ export default async function handler(req, res) {
     
     console.log(`Creating checkout session for ${email}`);
     
-    // Create Stripe checkout session
+    // Create Stripe checkout session with correct line_items format
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       customer_email: email,
       line_items: [
         {
-          price: process.env.STRIPE_PRICE_ID,
+          price: process.env.STRIPE_PRICE_ID, // This must be a valid price ID from your Stripe account
           quantity: 1,
         },
       ],

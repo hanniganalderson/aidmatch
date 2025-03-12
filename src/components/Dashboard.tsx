@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Sparkles, Bookmark, Calendar, Award, DollarSign, 
   ArrowRight, TrendingUp, Crown, Search, AlertCircle,
-  CheckCircle, Lock, Bell, RefreshCw, Zap
+  CheckCircle, Lock, Bell, RefreshCw, Zap, FileText, PenTool
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../contexts/SubscriptionContext';

@@ -26,6 +26,9 @@ import { clearOAuthErrorParams, processHashErrors } from './lib/auth-utils';
 import type { UserAnswers } from './types';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { SubscriptionSuccessPage } from './pages/SubscriptionSuccessPage';
+import { EssayAssistant } from './pages/tools/EssayAssistant';
+import { FinancialOptimizer } from './pages/tools/FinancialOptimizer';
+import { DeadlineTracker } from './pages/tools/DeadlineTracker';
 
 // Import animation styles
 import './styles/animations.css';
@@ -217,6 +220,11 @@ function AppContent() {
         
         {/* Add this route to your router */}
         <Route path="/subscription-success" element={<SubscriptionSuccessPage />} />
+        
+        {/* New routes */}
+        <Route path="/tools/essay-assistant" element={<EssayAssistant />} />
+        <Route path="/tools/financial-optimizer" element={<FinancialOptimizer />} />
+        <Route path="/tools/deadline-tracker" element={<DeadlineTracker />} />
       </Routes>
     </Layout>
   );

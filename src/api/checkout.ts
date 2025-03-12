@@ -11,11 +11,11 @@ const ENDPOINTS = {
 const getCheckoutEndpoint = () => {
   // For local development
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    return ENDPOINTS.DEVELOPMENT; // Use local development server
+    return 'http://localhost:3000/api/create-checkout-session';
   }
   
-  // For production
-  return ENDPOINTS.PRODUCTION;
+  // For production (Vercel)
+  return '/api/create-checkout-session';
 };
 
 interface CheckoutOptions {

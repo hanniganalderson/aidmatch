@@ -18,4 +18,14 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      external: ['@radix-ui/react-label'],
+      output: {
+        globals: {
+          '@radix-ui/react-label': 'RadixUILabel'
+        }
+      }
+    }
+  }
 }); 

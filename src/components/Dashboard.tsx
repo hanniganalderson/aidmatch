@@ -13,7 +13,7 @@ import { supabase } from '../lib/supabase';
 import { Button } from './ui/button';
 import { PremiumFeatureGate } from './ui/premiumFeatureGate';
 import { FeatureLimitIndicator } from './ui/FeatureLimitIndicator';
-import { useFeatureUsage, FeatureName } from '../lib/feature-usage';
+import { FeatureName } from '../lib/feature-usage';
 import type { UserAnswers, ScoredScholarship } from '../types';
 import ErrorBoundary from './ErrorBoundary';
 
@@ -22,43 +22,103 @@ interface DashboardProps {
 }
 
 export function Dashboard({ userAnswers }: DashboardProps) {
+  // All hooks at the top level to fix Error #310
   const navigate = useNavigate();
   const auth = useAuth();
   const user = auth?.user || null;
   
-  // Use the subscription context safely
-  let isSubscribed = false;
-  try {
-    const subscriptionContext = useSubscription();
-    isSubscribed = subscriptionContext?.isSubscribed || false;
-  } catch (err) {
-    console.error('Error using subscription context:', err);
-  }
-  
-  // Local states
+  // State declarations
+  const [isSubscribed, setIsSubscribed] = useState(false);
   const [savedScholarships, setSavedScholarships] = useState<ScoredScholarship[]>([]);
   const [upcomingDeadlines, setUpcomingDeadlines] = useState<ScoredScholarship[]>([]);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<UserAnswers | null>(null);
   const [error, setError] = useState<string | null>(null);
   
-  // Safe usage of feature tracking - FIX FOR LINE 130
-  // Initialize with default values to avoid potential null/undefined errors
-  const [savedScholarshipsUsage, setSavedScholarshipsUsage] = useState({ 
-    hasReachedLimit: false, 
-    loading: false 
+  // Feature usage state with default values
+  const [featureUsage, setFeatureUsage] = useState({
+    hasReachedLimit: false,
+    loading: false
   });
   
+  // Safe subscription check
   useEffect(() => {
     try {
-      const usage = useFeatureUsage(FeatureName.SAVED_SCHOLARSHIPS);
-      if (usage) {
-        setSavedScholarshipsUsage(usage);
-      }
+      const subscriptionContext = useSubscription();
+      setIsSubscribed(subscriptionContext?.isSubscribed || false);
     } catch (err) {
-      console.error('Error using feature usage hook:', err);
+      console.error('Error using subscription context:', err);
+      setIsSubscribed(false);
     }
   }, []);
+  
+  // Feature usage check effect
+  useEffect(() => {
+    // Check if user has reached the saved scholarship limit
+    const checkFeatureLimit = () => {
+      const FREE_LIMIT = 3; // Free users can save up to 3 scholarships
+      const hasReachedLimit = !isSubscribed && savedScholarships.length >= FREE_LIMIT;
+      
+      setFeatureUsage({
+        hasReachedLimit,
+        loading: false
+      });
+    };
+  
+  // Main component return
+  return (
+    <div className="min-h-screen py-12 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
+      <div className="container mx-auto px-4">
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={containerVariants}
+          className="max-w-6xl mx-auto"
+        >
+          {/* Welcome Section */}
+          <ErrorBoundary>
+            {renderWelcomeSection()}
+          </ErrorBoundary>
+          
+          {/* Profile Stats */}
+          <ErrorBoundary>
+            {isProfileComplete && renderProfileTiles()}
+          </ErrorBoundary>
+          
+          {/* Main Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+            {/* Left Column: Scholarships and Deadlines */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Saved Scholarships Section */}
+              <ErrorBoundary>
+                {renderSavedScholarshipsSection()}
+              </ErrorBoundary>
+
+              {/* AI Recommendations Section */}
+              <ErrorBoundary>
+                {renderAIRecommendationsSection()}
+              </ErrorBoundary>
+              
+              {/* Deadlines Section */}
+              <ErrorBoundary>
+                {renderDeadlinesSection()}
+              </ErrorBoundary>
+            </div>
+            
+            {/* Right Column: Financial Resources */}
+            <div>
+              <ErrorBoundary>
+                {renderFinancialResourcesSection()}
+              </ErrorBoundary>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  );
+    
+    checkFeatureLimit();
+  }, [savedScholarships.length, isSubscribed]);
   
   // Load user profile and saved scholarships
   useEffect(() => {
@@ -73,8 +133,8 @@ export function Dashboard({ userAnswers }: DashboardProps) {
           return;
         }
         
+        // Fetch user profile
         try {
-          // Fetch user profile
           const { data: profileData, error: profileError } = await supabase
             .from('user_profiles')
             .select('*')
@@ -228,9 +288,10 @@ export function Dashboard({ userAnswers }: DashboardProps) {
     );
   }
   
+  // Helper render functions to fix Error #130
   // Render the welcome section
   const renderWelcomeSection = () => {
-    const userName = auth.getUserDisplayName();
+    const userName = auth?.getUserDisplayName?.() || 'User';
     const userEmail = user?.email || '';
     
     return (
@@ -382,336 +443,335 @@ export function Dashboard({ userAnswers }: DashboardProps) {
     );
   };
   
-  return (
-    <div className="min-h-screen py-12 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
-      <div className="container mx-auto px-4">
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={containerVariants}
-          className="max-w-6xl mx-auto"
-        >
-          {/* Welcome Section */}
-          <ErrorBoundary>
-            {renderWelcomeSection()}
-          </ErrorBoundary>
+  // Render saved scholarships section
+  const renderSavedScholarshipsSection = () => {
+    return (
+      <motion.div
+        variants={itemVariants}
+        className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-md p-6 mb-6"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Bookmark className="w-5 h-5 text-primary-500" />
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Saved Scholarships</h2>
+          </div>
           
-          {/* Profile Stats */}
-          <ErrorBoundary>
-            {isProfileComplete && renderProfileTiles()}
-          </ErrorBoundary>
-          
-          {/* Main Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-            {/* Left Column: Scholarships and Deadlines */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Saved Scholarships Section */}
-              <ErrorBoundary>
-                <motion.div
-                  variants={itemVariants}
-                  className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-md p-6 mb-6"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <Bookmark className="w-5 h-5 text-primary-500" />
-                      <h2 className="text-lg font-bold text-gray-900 dark:text-white">Saved Scholarships</h2>
-                    </div>
-                    
-                    {/* FIX FOR LINE 310: Add proper conditional check for non-subscribed users */}
-                    {!isSubscribed && (
-                      <FeatureLimitIndicator 
-                        featureName={FeatureName.SAVED_SCHOLARSHIPS}
-                        variant="inline"
-                      />
-                    )}
-                    
-                    {savedScholarships.length > 0 && (
-                      <Button
-                        onClick={() => navigate('/saved-scholarships')}
-                        variant="outline"
-                        className="text-sm"
-                      >
-                        View All
-                      </Button>
-                    )}
-                  </div>
-                  
-                  {/* Handle saved scholarships display with proper conditionals */}
-                  {!isSubscribed && savedScholarshipsUsage.hasReachedLimit ? (
-                    <PremiumFeatureGate
-                      feature="Unlimited Saved Scholarships"
-                      description="Upgrade to Plus to save and track all your scholarship opportunities in one place."
-                      icon="crown"
-                    />
-                  ) : savedScholarships.length > 0 ? (
-                    <div className="space-y-3">
-                      {savedScholarships.slice(0, 3).map(scholarship => (
-                        <div 
-                          key={scholarship.id}
-                          className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 hover:shadow-md transition-shadow"
-                        >
-                          <h3 className="font-semibold text-gray-900 dark:text-white mb-1 line-clamp-1">
-                            {scholarship.name}
-                          </h3>
-                          <div className="flex justify-between items-center">
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                              Amount: ${scholarship.amount?.toLocaleString() || 'Varies'}
-                            </p>
-                            {scholarship.deadline && (
-                              <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                {formatDate(scholarship.deadline)}
-                              </div>
-                            )}
-                          </div>
-                          <Button
-                            onClick={() => navigate(`/results`)}
-                            variant="link"
-                            className="mt-1 h-auto p-0 text-xs"
-                          >
-                            View Details
-                            <ArrowRight className="w-3 h-3 ml-1" />
-                          </Button>
-                        </div>
-                      ))}
-                      
-                      {savedScholarships.length > 3 && (
-                        <Button
-                          onClick={() => navigate('/saved-scholarships')}
-                          variant="ghost"
-                          className="w-full text-sm"
-                        >
-                          View {savedScholarships.length - 3} more
-                        </Button>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="text-center py-10 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
-                      <Bookmark className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                      <h3 className="text-gray-700 dark:text-gray-300 font-medium mb-2">No saved scholarships yet</h3>
-                      <p className="text-gray-500 dark:text-gray-400 text-sm mb-4 max-w-xs mx-auto">
-                        Save scholarships to keep track of opportunities you're interested in.
-                      </p>
-                      <Button
-                        onClick={() => navigate('/results')}
-                      >
-                        Find Scholarships
-                      </Button>
-                    </div>
-                  )}
-                </motion.div>
-              </ErrorBoundary>
-
-              {/* AI Recommendations Section */}
-              <ErrorBoundary>
-                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-md p-6 mb-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Sparkles className="w-5 h-5 text-purple-500" />
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                      AI Recommendations
-                    </h2>
-                  </div>
-                  
-                  <div className="text-center py-10 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
-                    <Sparkles className="w-12 h-12 text-purple-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                      Generate AI Scholarship Recommendations
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
-                      Our AI can analyze your profile and suggest personalized scholarship opportunities that match your academic background.
-                    </p>
-                    <Button
-                      onClick={() => navigate('/results')}
-                      className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
-                    >
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Find Matching Scholarships
-                    </Button>
-                  </div>
-                </div>
-              </ErrorBoundary>
-              
-              {/* Deadlines Section */}
-              <ErrorBoundary>
-                <motion.div
-                  variants={itemVariants}
-                  className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-md p-6 mb-6"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-5 h-5 text-red-500" />
-                      <h2 className="text-lg font-bold text-gray-900 dark:text-white">Upcoming Deadlines</h2>
-                    </div>
-                    
-                    {!isSubscribed && (
-                      <PremiumFeatureGate
-                        feature="Deadline Reminders"
-                        description="Get notified before scholarship deadlines"
-                        icon="bell"
-                        showChildren={true}
-                        blurChildren={false}
-                      >
-                        <Button
-                          onClick={() => navigate('/plus')}
-                          size="sm"
-                          className="text-xs bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:opacity-90"
-                        >
-                          <Bell className="w-3 h-3 mr-1" />
-                          Get Reminders
-                        </Button>
-                      </PremiumFeatureGate>
-                    )}
-                  </div>
-                  
-                  {upcomingDeadlines.length > 0 ? (
-                    <div className="space-y-3">
-                      {upcomingDeadlines.map(scholarship => {
-                        const daysLeft = getDaysRemaining(scholarship.deadline);
-                        return (
-                          <div
-                            key={scholarship.id}
-                            className="p-3 rounded-lg border bg-gray-50 dark:bg-gray-700/50 hover:shadow-md transition-shadow"
-                            style={{
-                              borderColor: daysLeft && daysLeft <= 7 
-                                ? 'rgb(239, 68, 68)' 
-                                : 'rgb(229, 231, 235)'
-                            }}
-                          >
-                            <div className="flex justify-between items-start">
-                              <h3 className="font-semibold text-gray-900 dark:text-white mb-1 line-clamp-1">
-                                {scholarship.name}
-                              </h3>
-                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                                daysLeft && daysLeft <= 7
-                                  ? 'bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400' 
-                                  : 'bg-amber-100 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400'
-                              }`}>
-                                {daysLeft !== null ? `${daysLeft} days left` : 'No deadline'}
-                              </span>
-                            </div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                              {formatDate(scholarship.deadline)}
-                            </p>
-                            <Button
-                              onClick={() => navigate(`/results`)}
-                              variant="link"
-                              className="mt-1 h-auto p-0 text-xs"
-                            >
-                              View Details
-                              <ArrowRight className="w-3 h-3 ml-1" />
-                            </Button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
-                      <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                      <h3 className="text-gray-700 dark:text-gray-300 font-medium mb-2">No upcoming deadlines</h3>
-                      <p className="text-gray-500 dark:text-gray-400 text-sm mb-4 max-w-xs mx-auto">
-                        Save scholarships to track their deadlines.
-                      </p>
-                      <Button
-                        onClick={() => navigate('/results')}
-                      >
-                        Find Scholarships
-                      </Button>
-                    </div>
-                  )}
-                </motion.div>
-              </ErrorBoundary>
+          {!isSubscribed && (
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              {savedScholarships.length}/3 saved
             </div>
-            
-            {/* Right Column: Financial Resources */}
-            <div>
-              <ErrorBoundary>
-                <motion.div
-                  variants={itemVariants}
-                  className="space-y-6"
+          )}
+          
+          {savedScholarships.length > 0 && (
+            <Button
+              onClick={() => navigate('/saved-scholarships')}
+              variant="outline"
+              className="text-sm"
+            >
+              View All
+            </Button>
+          )}
+        </div>
+        
+        {renderSavedScholarshipsContent()}
+      </motion.div>
+    );
+  };
+  
+  // Separate function for the saved scholarships content to fix Error #130
+  const renderSavedScholarshipsContent = () => {
+    // Show upgrade prompt if user reached limit
+    if (!isSubscribed && featureUsage.hasReachedLimit) {
+      return (
+        <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-100 dark:border-indigo-800/30 rounded-lg">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-indigo-100 dark:bg-indigo-800/50 rounded-full">
+              <Crown className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <div className="flex-grow">
+              <p className="font-medium text-gray-900 dark:text-white">
+                Unlimited Saved Scholarships
+              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                Upgrade to Plus to save and track all your scholarship opportunities in one place.
+              </p>
+            </div>
+            <Button
+              onClick={() => navigate('/plus')}
+              className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:opacity-90"
+            >
+              Upgrade
+            </Button>
+          </div>
+        </div>
+      );
+    }
+    
+    // Show scholarships if user has saved any
+    if (savedScholarships.length > 0) {
+      return (
+        <div className="space-y-3">
+          {savedScholarships.slice(0, 3).map(scholarship => (
+            <div 
+              key={scholarship.id}
+              className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 hover:shadow-md transition-shadow"
+            >
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-1 line-clamp-1">
+                {scholarship.name}
+              </h3>
+              <div className="flex justify-between items-center">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Amount: ${scholarship.amount?.toLocaleString() || 'Varies'}
+                </p>
+                {scholarship.deadline && (
+                  <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    {formatDate(scholarship.deadline)}
+                  </div>
+                )}
+              </div>
+              <Button
+                onClick={() => navigate(`/results`)}
+                variant="link"
+                className="mt-1 h-auto p-0 text-xs"
+              >
+                View Details
+                <ArrowRight className="w-3 h-3 ml-1" />
+              </Button>
+            </div>
+          ))}
+          
+          {savedScholarships.length > 3 && (
+            <Button
+              onClick={() => navigate('/saved-scholarships')}
+              variant="ghost"
+              className="w-full text-sm"
+            >
+              View {savedScholarships.length - 3} more
+            </Button>
+          )}
+        </div>
+      );
+    }
+    
+    // Empty state
+    return (
+      <div className="text-center py-10 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+        <Bookmark className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+        <h3 className="text-gray-700 dark:text-gray-300 font-medium mb-2">No saved scholarships yet</h3>
+        <p className="text-gray-500 dark:text-gray-400 text-sm mb-4 max-w-xs mx-auto">
+          Save scholarships to keep track of opportunities you're interested in.
+        </p>
+        <Button
+          onClick={() => navigate('/results')}
+        >
+          Find Scholarships
+        </Button>
+      </div>
+    );
+  };
+  
+  // Render AI recommendations section
+  const renderAIRecommendationsSection = () => {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-md p-6 mb-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Sparkles className="w-5 h-5 text-purple-500" />
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            AI Recommendations
+          </h2>
+        </div>
+        
+        <div className="text-center py-10 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+          <Sparkles className="w-12 h-12 text-purple-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+            Generate AI Scholarship Recommendations
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+            Our AI can analyze your profile and suggest personalized scholarship opportunities that match your academic background.
+          </p>
+          <Button
+            onClick={() => navigate('/results')}
+            className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
+          >
+            <Sparkles className="w-4 h-4 mr-2" />
+            Find Matching Scholarships
+          </Button>
+        </div>
+      </div>
+    );
+  };
+  
+  // Render deadlines section
+  const renderDeadlinesSection = () => {
+    return (
+      <motion.div
+        variants={itemVariants}
+        className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-md p-6 mb-6"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-red-500" />
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Upcoming Deadlines</h2>
+          </div>
+          
+          {!isSubscribed && (
+            <div className="inline-block">
+              <Button
+                onClick={() => navigate('/plus')}
+                size="sm"
+                className="text-xs bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:opacity-90"
+              >
+                <Bell className="w-3 h-3 mr-1" />
+                Get Reminders
+              </Button>
+            </div>
+          )}
+        </div>
+        
+        {upcomingDeadlines.length > 0 ? (
+          <div className="space-y-3">
+            {upcomingDeadlines.map(scholarship => {
+              const daysLeft = getDaysRemaining(scholarship.deadline);
+              return (
+                <div
+                  key={scholarship.id}
+                  className="p-3 rounded-lg border bg-gray-50 dark:bg-gray-700/50 hover:shadow-md transition-shadow"
+                  style={{
+                    borderColor: daysLeft && daysLeft <= 7 
+                      ? 'rgb(239, 68, 68)' 
+                      : 'rgb(229, 231, 235)'
+                  }}
                 >
-                  {/* Header */}
-                  <div className="flex items-center gap-2 mb-2">
-                    <DollarSign className="w-5 h-5 text-green-500" />
-                    <h2 className="text-lg font-bold text-gray-900 dark:text-white">Financial Resources</h2>
+                  <div className="flex justify-between items-start">
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-1 line-clamp-1">
+                      {scholarship.name}
+                    </h3>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                      daysLeft && daysLeft <= 7
+                        ? 'bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400' 
+                        : 'bg-amber-100 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400'
+                    }`}>
+                      {daysLeft !== null ? `${daysLeft} days left` : 'No deadline'}
+                    </span>
                   </div>
-                  
-                  {/* FAFSA Card */}
-                  <div className="p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-md">
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full">
-                        <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-gray-900 dark:text-white">FAFSA 2025-2026</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                          The FAFSA application for the 2025-2026 academic year opens on October 1, 2024.
-                        </p>
-                        <Button
-                          variant="outline"
-                          onClick={() => window.open('https://studentaid.gov/h/apply-for-aid/fafsa', '_blank')}
-                          className="text-sm"
-                        >
-                          Learn More
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Plus-only Essay Assistance */}
-                  {isSubscribed ? (
-                    <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl border border-indigo-100 dark:border-indigo-800/30 shadow-md">
-                      <div className="flex items-start gap-3">
-                        <div className="p-2 bg-indigo-100 dark:bg-indigo-800/50 rounded-full">
-                          <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-medium text-gray-900 dark:text-white">AI Essay Assistance</h3>
-                            <div className="px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-xs font-medium">
-                              Plus Feature
-                            </div>
-                          </div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                            Get AI-powered help with your scholarship essays and personal statements.
-                          </p>
-                          <Button
-                            onClick={() => navigate('/essay-help')}
-                            className="text-sm bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:opacity-90"
-                          >
-                            <Sparkles className="w-4 h-4 mr-2" />
-                            Try Essay Assistant
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-md">
-                      <div className="flex items-start gap-3">
-                        <div className="p-2 bg-indigo-100 dark:bg-indigo-800/50 rounded-full">
-                          <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium text-gray-900 dark:text-white">Upgrade for AI Essay Assistance</h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                            Upgrade to Plus to unlock AI-powered essay assistance for your scholarship applications.
-                          </p>
-                          <Button
-                            onClick={() => navigate('/plus')}
-                            className="text-sm bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:opacity-90"
-                          >
-                            <Sparkles className="w-4 h-4 mr-2" />
-                            Upgrade Now
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </motion.div>
-              </ErrorBoundary>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                    {formatDate(scholarship.deadline)}
+                  </p>
+                  <Button
+                    onClick={() => navigate(`/results`)}
+                    variant="link"
+                    className="mt-1 h-auto p-0 text-xs"
+                  >
+                    View Details
+                    <ArrowRight className="w-3 h-3 ml-1" />
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-8 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+            <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+            <h3 className="text-gray-700 dark:text-gray-300 font-medium mb-2">No upcoming deadlines</h3>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mb-4 max-w-xs mx-auto">
+              Save scholarships to track their deadlines.
+            </p>
+            <Button
+              onClick={() => navigate('/results')}
+            >
+              Find Scholarships
+            </Button>
+          </div>
+        )}
+      </motion.div>
+    );
+  };
+  
+  // Render financial resources section
+  const renderFinancialResourcesSection = () => {
+    return (
+      <motion.div
+        variants={itemVariants}
+        className="space-y-6"
+      >
+        {/* Header */}
+        <div className="flex items-center gap-2 mb-2">
+          <DollarSign className="w-5 h-5 text-green-500" />
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">Financial Resources</h2>
+        </div>
+        
+        {/* FAFSA Card */}
+        <div className="p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-md">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full">
+              <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
+            </div>
+            <div>
+              <h3 className="font-medium text-gray-900 dark:text-white">FAFSA 2025-2026</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                The FAFSA application for the 2025-2026 academic year opens on October 1, 2024.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => window.open('https://studentaid.gov/h/apply-for-aid/fafsa', '_blank')}
+                className="text-sm"
+              >
+                Learn More
+              </Button>
             </div>
           </div>
-        </motion.div>
-      </div>
-    </div>
-  );
-};
+        </div>
+        
+        {/* Plus-only Essay Assistance */}
+        {isSubscribed ? (
+          <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl border border-indigo-100 dark:border-indigo-800/30 shadow-md">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-indigo-100 dark:bg-indigo-800/50 rounded-full">
+                <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-medium text-gray-900 dark:text-white">AI Essay Assistance</h3>
+                  <div className="px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-xs font-medium">
+                    Plus Feature
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                  Get AI-powered help with your scholarship essays and personal statements.
+                </p>
+                <Button
+                  onClick={() => navigate('/essay-help')}
+                  className="text-sm bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:opacity-90"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Try Essay Assistant
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-md">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-indigo-100 dark:bg-indigo-800/50 rounded-full">
+                <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <div>
+                <h3 className="font-medium text-gray-900 dark:text-white">Upgrade for AI Essay Assistance</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                  Upgrade to Plus to unlock AI-powered essay assistance for your scholarship applications.
+                </p>
+                <Button
+                  onClick={() => navigate('/plus')}
+                  className="text-sm bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:opacity-90"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Upgrade Now
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </motion.div>
+    );
+  };

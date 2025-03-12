@@ -1,14 +1,8 @@
 // api/create-portal-session.js
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const { createClient } = require('@supabase/supabase-js');
+import Stripe from 'stripe';
+import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
-
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -25,6 +19,17 @@ module.exports = async (req, res) => {
   }
   
   try {
+    // Initialize Stripe with the secret key
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2023-10-16', // Use a stable API version
+    });
+    
+    // Initialize Supabase client
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+    
     const { email } = req.body;
     
     if (!email) {
@@ -57,7 +62,7 @@ module.exports = async (req, res) => {
     // Create Stripe portal session
     const session = await stripe.billingPortal.sessions.create({
       customer: subscriptionData.stripe_customer_id,
-      return_url: `${req.headers.origin || 'https://aidmatch.app'}/dashboard`,
+      return_url: `${req.headers.origin || 'https://aidmatch.co'}/dashboard`,
     });
     
     return res.status(200).json({ url: session.url });
@@ -69,4 +74,4 @@ module.exports = async (req, res) => {
       message: error.message
     });
   }
-};
+}

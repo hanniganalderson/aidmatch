@@ -9,12 +9,7 @@ const ENDPOINTS = {
 
 // Determine the correct endpoint based on environment
 const getCheckoutEndpoint = () => {
-  // For local development
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    return 'http://localhost:3000/api/create-checkout-session';
-  }
-  
-  // For production (Vercel)
+  // Always use the relative path for Vercel deployment
   return '/api/create-checkout-session';
 };
 
@@ -37,10 +32,7 @@ export async function createCheckoutSession({
   
   // Log diagnostic information
   const logDiagnostic = (message: string) => {
-    // Only log in development mode
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`CHECKOUT: ${message}`);
-    }
+    console.log(`CHECKOUT: ${message}`);
     if (onDiagnostic) onDiagnostic(message);
   };
   
@@ -48,39 +40,39 @@ export async function createCheckoutSession({
   logDiagnostic(`Using endpoint: ${endpoint}`);
   
   try {
-    // Get auth token for authenticated requests
-    const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token;
-    
-    // Prepare headers
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json'
-    };
-    
-    // Add authorization if we have a token
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-      logDiagnostic('Using authenticated request');
-    } else {
-      logDiagnostic('Using unauthenticated request');
-    }
-    
-    // Make the request
+    // Make the request with more detailed error handling
     logDiagnostic('Sending checkout request...');
     const response = await fetch(endpoint, {
       method: 'POST',
-      headers,
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({
         email,
         subscriptionType
       })
     });
     
-    // Handle non-200 responses
+    // Handle non-200 responses with more detailed logging
     if (!response.ok) {
-      const errorText = await response.text();
-      logDiagnostic(`Error response (${response.status}): ${errorText}`);
-      throw new Error(`Checkout failed: ${response.status} ${response.statusText}`);
+      const statusText = response.statusText;
+      let errorText = '';
+      
+      try {
+        // Try to get JSON error
+        const errorJson = await response.json();
+        errorText = JSON.stringify(errorJson);
+      } catch (e) {
+        // If not JSON, get text
+        try {
+          errorText = await response.text();
+        } catch (e2) {
+          errorText = 'Unable to read error response';
+        }
+      }
+      
+      logDiagnostic(`Error response (${response.status} ${statusText}): ${errorText}`);
+      throw new Error(`Checkout failed: ${response.status} ${statusText}`);
     }
     
     // Parse the response

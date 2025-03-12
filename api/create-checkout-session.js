@@ -1,7 +1,7 @@
 // api/create-checkout-session.js
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+import Stripe from 'stripe';
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -18,11 +18,18 @@ module.exports = async (req, res) => {
   }
   
   try {
+    // Initialize Stripe with the secret key
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2023-10-16', // Use a stable API version
+    });
+    
     const { email, subscriptionType = 'plus' } = req.body;
     
     if (!email) {
       return res.status(400).json({ error: 'Email is required' });
     }
+    
+    console.log(`Creating checkout session for ${email}`);
     
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
@@ -35,8 +42,8 @@ module.exports = async (req, res) => {
         },
       ],
       mode: 'subscription',
-      success_url: `${req.headers.origin || 'https://aidmatch.app'}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.origin || 'https://aidmatch.app'}/subscription-cancel`,
+      success_url: `${req.headers.origin || 'https://aidmatch.co'}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${req.headers.origin || 'https://aidmatch.co'}/subscription-cancel`,
       allow_promotion_codes: true,
     });
     
@@ -54,4 +61,4 @@ module.exports = async (req, res) => {
       message: error.message
     });
   }
-};
+}

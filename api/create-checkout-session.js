@@ -19,9 +19,7 @@ export default async function handler(req, res) {
   
   try {
     // Initialize Stripe with the secret key
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2023-10-16', // Use a stable API version
-    });
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     
     const { email, subscriptionType = 'plus' } = req.body;
     
@@ -37,7 +35,18 @@ export default async function handler(req, res) {
       customer_email: email,
       line_items: [
         {
-          price: process.env.STRIPE_PRICE_ID, // This must be a valid price ID from your Stripe account
+          // Use price_data instead of price if you don't have a price ID
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'AidMatch Plus Subscription',
+              description: 'Monthly subscription to AidMatch Plus',
+            },
+            unit_amount: 1499, // $14.99 in cents
+            recurring: {
+              interval: 'month',
+            },
+          },
           quantity: 1,
         },
       ],

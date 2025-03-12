@@ -45,79 +45,25 @@ export function Dashboard({ userAnswers }: DashboardProps) {
   useEffect(() => {
     try {
       const subscriptionContext = useSubscription();
-      setIsSubscribed(subscriptionContext?.isSubscribed || false);
+      if (subscriptionContext) {
+        setIsSubscribed(subscriptionContext.isSubscribed || false);
+      }
     } catch (err) {
       console.error('Error using subscription context:', err);
       setIsSubscribed(false);
     }
   }, []);
   
-  // Feature usage check effect
+  // Feature usage check effect - fixed to not return anything
   useEffect(() => {
     // Check if user has reached the saved scholarship limit
-    const checkFeatureLimit = () => {
-      const FREE_LIMIT = 3; // Free users can save up to 3 scholarships
-      const hasReachedLimit = !isSubscribed && savedScholarships.length >= FREE_LIMIT;
-      
-      setFeatureUsage({
-        hasReachedLimit,
-        loading: false
-      });
-    };
-  
-  // Main component return
-  return (
-    <div className="min-h-screen py-12 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
-      <div className="container mx-auto px-4">
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={containerVariants}
-          className="max-w-6xl mx-auto"
-        >
-          {/* Welcome Section */}
-          <ErrorBoundary>
-            {renderWelcomeSection()}
-          </ErrorBoundary>
-          
-          {/* Profile Stats */}
-          <ErrorBoundary>
-            {isProfileComplete && renderProfileTiles()}
-          </ErrorBoundary>
-          
-          {/* Main Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-            {/* Left Column: Scholarships and Deadlines */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Saved Scholarships Section */}
-              <ErrorBoundary>
-                {renderSavedScholarshipsSection()}
-              </ErrorBoundary>
-
-              {/* AI Recommendations Section */}
-              <ErrorBoundary>
-                {renderAIRecommendationsSection()}
-              </ErrorBoundary>
-              
-              {/* Deadlines Section */}
-              <ErrorBoundary>
-                {renderDeadlinesSection()}
-              </ErrorBoundary>
-            </div>
-            
-            {/* Right Column: Financial Resources */}
-            <div>
-              <ErrorBoundary>
-                {renderFinancialResourcesSection()}
-              </ErrorBoundary>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    </div>
-  );
+    const FREE_LIMIT = 3; // Free users can save up to 3 scholarships
+    const hasReachedLimit = !isSubscribed && savedScholarships.length >= FREE_LIMIT;
     
-    checkFeatureLimit();
+    setFeatureUsage({
+      hasReachedLimit,
+      loading: false
+    });
   }, [savedScholarships.length, isSubscribed]);
   
   // Load user profile and saved scholarships
@@ -775,3 +721,56 @@ export function Dashboard({ userAnswers }: DashboardProps) {
       </motion.div>
     );
   };
+  
+  // Main component return
+  return (
+    <div className="min-h-screen py-12 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
+      <div className="container mx-auto px-4">
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={containerVariants}
+          className="max-w-6xl mx-auto"
+        >
+          {/* Welcome Section */}
+          <ErrorBoundary>
+            {renderWelcomeSection()}
+          </ErrorBoundary>
+          
+          {/* Profile Stats */}
+          <ErrorBoundary>
+            {isProfileComplete && renderProfileTiles()}
+          </ErrorBoundary>
+          
+          {/* Main Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+            {/* Left Column: Scholarships and Deadlines */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Saved Scholarships Section */}
+              <ErrorBoundary>
+                {renderSavedScholarshipsSection()}
+              </ErrorBoundary>
+
+              {/* AI Recommendations Section */}
+              <ErrorBoundary>
+                {renderAIRecommendationsSection()}
+              </ErrorBoundary>
+              
+              {/* Deadlines Section */}
+              <ErrorBoundary>
+                {renderDeadlinesSection()}
+              </ErrorBoundary>
+            </div>
+            
+            {/* Right Column: Financial Resources */}
+            <div>
+              <ErrorBoundary>
+                {renderFinancialResourcesSection()}
+              </ErrorBoundary>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  );
+}

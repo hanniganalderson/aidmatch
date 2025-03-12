@@ -1,10 +1,11 @@
 // src/components/ui/FeatureLimitIndicator.tsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, AlertCircle, Sparkles } from 'lucide-react';
+import { AlertTriangle, Info } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useFeatureUsage, FeatureName } from '../../lib/feature-usage';
 import { Button } from './button';
+import { FEATURE_LIMITS } from '../../lib/feature-management';
 
 interface FeatureLimitIndicatorProps {
   featureName: FeatureName;
@@ -33,12 +34,11 @@ export function FeatureLimitIndicator({
     isSubscribed
   } = useFeatureUsage(featureName);
   
+  const feature = FEATURE_LIMITS[featureName];
+  const percentage = Math.min(Math.round((usage.count / limit) * 100), 100);
+  
   // If user is subscribed, don't show any limit indicator
   if (isSubscribed || loading) return null;
-  
-  // Calculate percentage used
-  const percentUsed = Math.min(100, Math.floor((usage.count / limit) * 100));
-  const isNearLimit = percentUsed >= 70;
   
   // Default message if not provided
   const defaultMessage = hasReachedLimit
@@ -70,12 +70,12 @@ export function FeatureLimitIndicator({
       };
     }
     
-    if (isNearLimit) {
+    if (percentage >= 70) {
       return {
-        text: 'text-orange-600 dark:text-orange-400',
-        bg: 'bg-orange-500',
-        border: 'border-orange-200 dark:border-orange-800/30',
-        containerBg: 'bg-orange-50 dark:bg-orange-900/20'
+        text: 'text-amber-600 dark:text-amber-400',
+        bg: 'bg-amber-500',
+        border: 'border-amber-200 dark:border-amber-800/30',
+        containerBg: 'bg-amber-50 dark:bg-amber-900/20'
       };
     }
     
@@ -105,7 +105,7 @@ export function FeatureLimitIndicator({
         <div className="h-1.5 w-16 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
           <motion.div 
             initial={{ width: 0 }}
-            animate={{ width: `${percentUsed}%` }}
+            animate={{ width: `${percentage}%` }}
             transition={{ duration: 0.5, ease: "easeOut" }}
             className={`h-full ${colors.bg}`}
           />
@@ -134,7 +134,7 @@ export function FeatureLimitIndicator({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {hasReachedLimit ? (
-              <AlertCircle className={`w-5 h-5 ${colors.text}`} />
+              <AlertTriangle className={`w-5 h-5 ${colors.text}`} />
             ) : (
               <div className="relative">
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -154,7 +154,7 @@ export function FeatureLimitIndicator({
                     fill="none" 
                     strokeWidth="2" 
                     strokeDasharray={Math.PI * 20}
-                    strokeDashoffset={Math.PI * 20 * (1 - percentUsed / 100)}
+                    strokeDashoffset={Math.PI * 20 * (1 - percentage / 100)}
                     transform="rotate(-90 12 12)"
                   />
                 </svg>
@@ -181,7 +181,6 @@ export function FeatureLimitIndicator({
               className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:opacity-90"
               onClick={handleUpgradeClick}
             >
-              <Sparkles className="w-3.5 h-3.5 mr-1.5" />
               Upgrade
             </Button>
           )}
@@ -204,7 +203,7 @@ export function FeatureLimitIndicator({
       <div className="h-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
         <motion.div 
           initial={{ width: 0 }}
-          animate={{ width: `${percentUsed}%` }}
+          animate={{ width: `${percentage}%` }}
           transition={{ duration: 0.5, ease: "easeOut" }}
           className={`h-full ${colors.bg}`}
         />
@@ -217,7 +216,6 @@ export function FeatureLimitIndicator({
             className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:opacity-90"
             onClick={handleUpgradeClick}
           >
-            <Sparkles className="w-3.5 h-3.5 mr-1.5" />
             Upgrade to Plus
           </Button>
         </div>

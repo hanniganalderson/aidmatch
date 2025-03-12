@@ -3,25 +3,31 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { FeatureName } from '../lib/feature-management';
+import { PaywallModal } from './ui/PaywallModal';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAuth?: boolean; // Prop to determine if authentication is required
   skipQuestionnaireCheck?: boolean; // New prop to skip questionnaire check for certain routes
+  requiredSubscription?: boolean; // Add this prop to check for subscription
+  requiredFeature?: FeatureName;
 }
 
 export function ProtectedRoute({ 
   children, 
   requireAuth = true,
-  skipQuestionnaireCheck = false
+  skipQuestionnaireCheck = false,
+  requiredSubscription = false,
+  requiredFeature
 }: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
+  const { user, loading, isSubscribed } = useAuth();
   const location = useLocation();
   const [profileLoading, setProfileLoading] = useState(true);
   const [hasCompletedQuestionnaire, setHasCompletedQuestionnaire] = useState(false);
-  const [hasSubscription, setHasSubscription] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
 
-  // Check if the user has completed the questionnaire and subscription status
+  // Check if the user has completed the questionnaire
   useEffect(() => {
     const checkUserStatus = async () => {
       if (!user) {
@@ -41,24 +47,11 @@ export function ProtectedRoute({
           console.error('Error checking user profile:', profileError);
         }
 
-        // Check subscription status
-        const { data: subscriptionData, error: subscriptionError } = await supabase
-          .from('subscriptions')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('status', 'active')
-          .single();
-
-        if (subscriptionError && subscriptionError.code !== 'PGRST116') {
-          console.error('Error checking subscription:', subscriptionError);
-        }
-
         // If profile exists and has some questionnaire data, consider it completed
         const hasCompletedQuestionnaire = !!(profileData && 
           (profileData.education_level || profileData.major || profileData.gpa || profileData.location));
         
         setHasCompletedQuestionnaire(hasCompletedQuestionnaire);
-        setHasSubscription(!!subscriptionData);
       } catch (err) {
         console.error('Error fetching user data:', err);
       } finally {
@@ -92,13 +85,13 @@ export function ProtectedRoute({
   const isSuccessPage = location.pathname === '/success';
   const isCancelPage = location.pathname === '/cancel';
   const isBillingPage = location.pathname === '/account/billing';
+  const isPlusPage = location.pathname === '/plus';
   
   // If it's a special page or we've explicitly set skipQuestionnaireCheck, don't check questionnaire
-  const shouldSkipQuestionnaireCheck = skipQuestionnaireCheck || isSuccessPage || isCancelPage || isBillingPage;
+  const shouldSkipQuestionnaireCheck = skipQuestionnaireCheck || 
+    isSuccessPage || isCancelPage || isBillingPage || isPlusPage;
 
   // Check if they need to be redirected to the questionnaire
-  // Skip this check if user is already on the questionnaire page, if auth is not required,
-  // or if the current route is in our skip list
   if (user && 
       !hasCompletedQuestionnaire && 
       !location.pathname.includes('/questionnaire') && 
@@ -107,5 +100,28 @@ export function ProtectedRoute({
     return <Navigate to="/questionnaire" replace />;
   }
 
+  // Check if subscription is required and user is not subscribed
+  if (requiredSubscription && !isSubscribed) {
+    // Instead of redirecting, show the paywall modal
+    if (!showPaywall) {
+      setShowPaywall(true);
+    }
+    
+    return (
+      <>
+        {children}
+        <PaywallModal 
+          isOpen={showPaywall}
+          onClose={() => setShowPaywall(false)}
+          featureName={requiredFeature || FeatureName.SAVED_SCHOLARSHIPS}
+          title="This Feature Requires Plus"
+          description="Upgrade to AidMatch Plus to access this premium feature."
+        />
+      </>
+    );
+  }
+
+  // If we have a required feature but no subscription requirement,
+  // the useFeatureAccess hook will handle showing the paywall when needed
   return <>{children}</>;
 }

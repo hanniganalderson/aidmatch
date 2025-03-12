@@ -15,7 +15,13 @@ import { PremiumFeatureGate } from './ui/premiumFeatureGate';
 import { FeatureLimitIndicator } from './ui/FeatureLimitIndicator';
 import { FeatureName } from '../lib/feature-usage';
 import type { UserAnswers, ScoredScholarship } from '../types';
-import ErrorBoundary from './ErrorBoundary';
+import { ProtectedRoute } from './ProtectedRoute';
+import { CheckoutButton } from './CheckoutButton';
+import { SubscriptionBadge } from './ui/SubscriptionBadge';
+import { PremiumFeature } from './ui/PremiumFeature';
+import { PremiumDashboardHeader } from './PremiumDashboardHeader';
+import { PremiumFeatureCard } from './ui/PremiumFeatureCard';
+import { PremiumAccountSettings } from './PremiumAccountSettings';
 
 interface DashboardProps {
   userAnswers?: UserAnswers;
@@ -724,53 +730,93 @@ export function Dashboard({ userAnswers }: DashboardProps) {
   
   // Main component return
   return (
-    <div className="min-h-screen py-12 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
-      <div className="container mx-auto px-4">
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={containerVariants}
-          className="max-w-6xl mx-auto"
-        >
-          {/* Welcome Section */}
-          <ErrorBoundary>
-            {renderWelcomeSection()}
-          </ErrorBoundary>
-          
-          {/* Profile Stats */}
-          <ErrorBoundary>
-            {isProfileComplete && renderProfileTiles()}
-          </ErrorBoundary>
-          
-          {/* Main Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-            {/* Left Column: Scholarships and Deadlines */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Saved Scholarships Section */}
-              <ErrorBoundary>
-                {renderSavedScholarshipsSection()}
-              </ErrorBoundary>
-
-              {/* AI Recommendations Section */}
-              <ErrorBoundary>
-                {renderAIRecommendationsSection()}
-              </ErrorBoundary>
-              
-              {/* Deadlines Section */}
-              <ErrorBoundary>
-                {renderDeadlinesSection()}
-              </ErrorBoundary>
-            </div>
+    <ProtectedRoute>
+      <div className="min-h-screen py-12 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={containerVariants}
+            className="max-w-6xl mx-auto"
+          >
+            {/* Show premium header for Plus subscribers */}
+            {isSubscribed ? (
+              <PremiumDashboardHeader />
+            ) : (
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                    Dashboard
+                  </h1>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Manage your scholarship journey
+                  </p>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <SubscriptionBadge showFree={true} />
+                  <CheckoutButton size="sm" showDiagnosticOnError={true} />
+                </div>
+              </div>
+            )}
             
-            {/* Right Column: Financial Resources */}
-            <div>
-              <ErrorBoundary>
-                {renderFinancialResourcesSection()}
-              </ErrorBoundary>
+            {/* Feature usage indicators for free users */}
+            {!isSubscribed && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <FeatureLimitIndicator 
+                  featureName={FeatureName.SAVED_SCHOLARSHIPS} 
+                  variant="banner"
+                />
+                <FeatureLimitIndicator 
+                  featureName={FeatureName.AI_RECOMMENDATIONS} 
+                  variant="banner"
+                />
+              </div>
+            )}
+            
+            {/* Main content */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+              <div className="lg:col-span-2 space-y-6">
+                {/* Saved Scholarships Section */}
+                <ErrorBoundary>
+                  {renderSavedScholarshipsSection()}
+                </ErrorBoundary>
+                
+                {/* AI Recommendations Section */}
+                <ErrorBoundary>
+                  {isSubscribed ? (
+                    <PremiumFeatureCard
+                      title="AI Recommendations"
+                      description="Personalized scholarship matches based on your profile"
+                      icon={<Sparkles className="w-5 h-5" />}
+                    >
+                      {renderAIRecommendationsSection()}
+                    </PremiumFeatureCard>
+                  ) : (
+                    <PremiumFeature 
+                      featureName={FeatureName.AI_RECOMMENDATIONS}
+                      locked={false}
+                    >
+                      {renderAIRecommendationsSection()}
+                    </PremiumFeature>
+                  )}
+                </ErrorBoundary>
+              </div>
+              
+              {/* Right Column */}
+              <div className="space-y-6">
+                {isSubscribed && (
+                  <PremiumAccountSettings />
+                )}
+                
+                <ErrorBoundary>
+                  {renderFinancialResourcesSection()}
+                </ErrorBoundary>
+              </div>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        </div>
       </div>
-    </div>
+    </ProtectedRoute>
   );
 }

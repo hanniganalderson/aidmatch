@@ -18,34 +18,29 @@ async function createCheckoutSession(req, res) {
       return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
-    // Extract email from request body
-    const { email } = req.body;
+    const { email, subscriptionType } = req.body; // Expect subscription type in the request
 
-    // Validate email
-    if (!email || typeof email !== 'string') {
-      return res.status(400).json({ 
-        error: 'Invalid or missing email' 
-      });
+    // Validate email and subscription type
+    if (!email || typeof email !== 'string' || !subscriptionType) {
+      return res.status(400).json({ error: 'Invalid or missing email or subscription type' });
     }
+
+    // Determine price ID based on subscription type
+    const priceId = subscriptionType === 'plus' ? process.env.STRIPE_PLUS_PLAN_PRICE_ID : process.env.STRIPE_FREE_PLAN_PRICE_ID;
 
     // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'subscription',
       customer_email: email,
-      success_url: `${process.env.SITE_URL || 'https://aidmatch.co'}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.SITE_URL || 'https://aidmatch.co'}/cancel`,
+      success_url: `${process.env.SITE_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.SITE_URL}/cancel`,
       line_items: [
         {
-          price: process.env.STRIPE_MONTHLY_PLAN_PRICE_ID, // Stripe price ID for your monthly plan
+          price: priceId,
           quantity: 1,
         },
       ],
-      subscription_data: {
-        metadata: {
-          source: 'aidmatch_signup',
-        },
-      },
       allow_promotion_codes: true,
     });
 

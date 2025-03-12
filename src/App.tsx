@@ -16,7 +16,6 @@ import { InputScholarship } from './components/InputScholarship';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SubscriptionProvider } from './contexts/SubscriptionContext';
 import { supabase } from './lib/supabase';
-import ErrorBoundary from './components/ErrorBoundary';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import { Plus } from './pages/Plus';
@@ -196,11 +195,9 @@ function AppContent() {
         
         {/* Use simplified dashboard instead */}
         <Route path="/dashboard" element={
-          <ErrorBoundary>
             <ProtectedRoute requireAuth={false}>
               <Dashboard userAnswers={answers} />
             </ProtectedRoute>
-          </ErrorBoundary>
         } />
         
         {/* Routes that require authentication */}
@@ -223,7 +220,6 @@ function AppContent() {
 
 function App() {
   return (
-    <ErrorBoundary>
       <AuthProvider>
         <SubscriptionProvider>
           <Router>
@@ -231,7 +227,6 @@ function App() {
           </Router>
         </SubscriptionProvider>
       </AuthProvider>
-    </ErrorBoundary>
   );
 }
 

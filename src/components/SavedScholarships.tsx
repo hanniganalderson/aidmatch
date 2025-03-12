@@ -31,7 +31,7 @@ interface Scholarship {
 export function SavedScholarships() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user, isSubscribed } = useAuth();
   const navigate = useNavigate();
   const [scholarships, setScholarships] = useState<Scholarship[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -39,6 +39,13 @@ export function SavedScholarships() {
   useEffect(() => {
     if (!user) {
       navigate('/signin');
+      return;
+    }
+
+    if (!isSubscribed) {
+      // If user is not subscribed, show a message or redirect
+      alert('Please subscribe to access saved scholarships.');
+      navigate('/subscribe');
       return;
     }
 
@@ -123,7 +130,7 @@ export function SavedScholarships() {
     };
 
     fetchSavedScholarships();
-  }, [user, navigate]);
+  }, [user, isSubscribed, navigate]);
 
   const handleUnsave = async (scholarshipId: string) => {
     if (!user) return;

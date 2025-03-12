@@ -128,3 +128,125 @@ AidMatch is an AI-powered platform designed to match students with **high-ROI sc
 - Think about **how the AI ranking system improves scholarship recommendations**.  
 
 ---
+
+# AidMatch: AI-Powered Scholarship Matching Platform
+
+## Project Overview
+
+AidMatch is a web application designed to help students find and apply for scholarships that match their academic profile, interests, and background. The platform leverages AI to provide personalized scholarship recommendations, track application deadlines, and assist with scholarship essays.
+
+## Core Features
+
+### 1. User Profiles
+- Students create profiles with their academic information:
+  - Education level
+  - School/university
+  - Major/field of study
+  - GPA
+  - Location
+  - Extracurricular activities
+  - Demographic information
+
+### 2. AI-Powered Scholarship Matching
+- Analyzes user profiles to suggest relevant scholarships
+- Scores and ranks scholarships based on match quality
+- Provides personalized recommendations based on eligibility requirements
+
+### 3. Scholarship Management
+- Save scholarships to a personal dashboard
+- Track application deadlines
+- Set reminders for upcoming deadlines
+- View scholarship details (amount, requirements, application process)
+
+### 4. Premium Features (Plus Subscription)
+- Unlimited saved scholarships (free users limited to 3)
+- AI essay assistance for scholarship applications
+- Deadline reminders via email/notifications
+- Enhanced AI recommendations
+- Priority access to new features
+
+## Technical Architecture
+
+### Frontend
+- React for the UI framework
+- TypeScript for type safety
+- Tailwind CSS for styling
+- Framer Motion for animations
+- React Router for navigation
+- Context API for state management
+
+### Backend
+- Supabase for database and authentication
+- Tables include:
+  - user_profiles
+  - scholarships
+  - saved_scholarships
+  - subscription_data
+
+### AI Components
+- Natural language processing for matching students to scholarships
+- Text generation for essay assistance
+- Recommendation engine for scholarship suggestions
+
+## User Journey
+
+1. **Onboarding**
+   - Sign up/login
+   - Complete questionnaire for profile setup
+   - Educational background
+   - Demographic information
+   - Interests and extracurriculars
+
+2. **Dashboard Experience**
+   - Overview of saved scholarships
+   - Profile completion status
+   - Upcoming deadlines
+   - Financial resources (FAFSA information)
+   - AI recommendation section
+
+3. **Scholarship Discovery**
+   - Browse AI-recommended scholarships
+   - Search and filter scholarship database
+   - Save interesting opportunities
+   - View match percentage and eligibility
+
+4. **Application Process**
+   - Track application status
+   - Receive deadline reminders
+   - Essay assistance (Plus users)
+   - Application requirement checklists
+
+## Business Model
+
+- **Freemium Model**:
+  - Basic features available to all users
+  - Premium features (Plus subscription) for paying users
+  - Plus subscription unlocks unlimited saved scholarships, AI essay assistance, and enhanced features
+
+## Target Audience
+
+- High school students preparing for college
+- Current undergraduate and graduate students
+- Parents helping their children find financial aid
+- School counselors and advisors
+- First-generation college students
+- International students seeking funding opportunities
+
+## Value Proposition
+
+AidMatch simplifies the overwhelming scholarship search process by providing:
+
+1. **Personalization**: Matches students with scholarships they're actually eligible for
+2. **Efficiency**: Saves time by filtering through thousands of scholarships
+3. **Organization**: Keeps track of deadlines and application requirements
+4. **Guidance**: Provides assistance with applications and essays
+5. **Accessibility**: Makes scholarship information more accessible to all students
+
+## Future Development Goals
+
+- Mobile application
+- Integration with college application platforms
+- Community features for scholarship reviews and tips
+- Direct application submission through the platform
+- Expanded AI capabilities for college admissions assistance
+- Partnerships with scholarship providers for exclusive opportunities

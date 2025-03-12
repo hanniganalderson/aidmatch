@@ -396,125 +396,120 @@ export function Dashboard({ userAnswers }: DashboardProps) {
             variants={containerVariants}
             className="max-w-6xl mx-auto"
           >
-            {/* Gamified Dashboard Header */}
-            <motion.div variants={itemVariants} className="mb-8 text-center">
-              <h1 className="text-4xl font-bold mb-2 gradient-text">
+            {/* Modern Dashboard Header */}
+            <motion.div variants={itemVariants} className="mb-12 text-center">
+              <h1 className="text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300">
                 {isSubscribed ? "Your Plus Dashboard" : "Your Scholarship Journey"}
               </h1>
               
-              {/* Progress Bar */}
-              <div className="w-full bg-gray-200 dark:bg-gray-700 h-4 rounded-full mt-6 mb-2 overflow-hidden">
+              {/* Subtle Progress Indicator */}
+              <div className="w-full max-w-md mx-auto bg-gray-200/50 dark:bg-gray-800/30 h-1.5 rounded-full mt-6 mb-2 overflow-hidden">
                 <div 
-                  className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-1000"
+                  className="h-full bg-gradient-to-r from-indigo-500/80 to-purple-500/80 rounded-full transition-all duration-1000"
                   style={{ width: `${Math.min((savedScholarships.length / 5) * 100, 100)}%` }}
                 ></div>
               </div>
-              
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {savedScholarships.length > 0 
-                  ? `You've saved ${savedScholarships.length} scholarships! ${isSubscribed ? '✨ Plus member bonus: Unlimited saves!' : 'Upgrade to save unlimited scholarships!'}`
-                  : "Start your journey by saving scholarships that match your profile!"}
-              </p>
             </motion.div>
             
-            {/* Core Features Section */}
+            {/* Feature Cards - More Minimalist */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
               {/* AI Scholarship Results */}
               <motion.div 
                 variants={itemVariants}
-                className="feature-card flex flex-col h-full"
-                whileHover={{ y: -5, boxShadow: "0 10px 30px -15px rgba(0,0,0,0.2)" }}
+                className="bg-white dark:bg-gray-800/90 rounded-xl p-6 shadow-sm hover:shadow-md transition-all border border-gray-100 dark:border-gray-700/30"
               >
-                <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-full w-12 h-12 flex items-center justify-center mb-4">
-                  <Search className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-full">
+                    <Search className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                  <h3 className="font-medium text-lg">AI Scholarship Matches</h3>
                 </div>
-                <h3 className="text-xl font-semibold mb-2">AI Scholarship Matches</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4 flex-grow">
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
                   Discover scholarships tailored to your profile with our AI matching system.
                 </p>
                 <Button
-                  onClick={() => navigate('/scholarships')}
-                  className="w-full mt-auto"
+                  onClick={() => navigate('/results')}
+                  className="w-full bg-gray-50 hover:bg-gray-100 dark:bg-gray-700/50 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-600/30"
                 >
-                  Find Matches
+                  View Matches
                 </Button>
               </motion.div>
               
               {/* Saved Scholarships */}
               <motion.div 
                 variants={itemVariants}
-                className="feature-card flex flex-col h-full"
-                whileHover={{ y: -5, boxShadow: "0 10px 30px -15px rgba(0,0,0,0.2)" }}
+                className="bg-white dark:bg-gray-800/90 rounded-xl p-6 shadow-sm hover:shadow-md transition-all border border-gray-100 dark:border-gray-700/30"
               >
-                <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-full w-12 h-12 flex items-center justify-center mb-4">
-                  <Bookmark className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-full">
+                    <Bookmark className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  </div>
+                  <h3 className="font-medium text-lg">Saved Scholarships</h3>
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Saved Scholarships</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4 flex-grow">
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
                   {isSubscribed 
-                    ? "Save unlimited scholarships with your Plus membership."
-                    : "Save your favorite scholarships to apply later."}
+                    ? "Save unlimited scholarships to review and apply later."
+                    : "Save up to 3 scholarships with a free account."}
                 </p>
                 <Button
-                  onClick={() => navigate('/saved')}
-                  className="w-full mt-auto"
+                  onClick={() => navigate('/saved-scholarships')}
+                  className="w-full bg-gray-50 hover:bg-gray-100 dark:bg-gray-700/50 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-600/30"
                 >
                   View Saved
                 </Button>
               </motion.div>
               
-              {/* Contribute Scholarships */}
+              {/* Contribute Scholarship */}
               <motion.div 
                 variants={itemVariants}
-                className="feature-card flex flex-col h-full"
-                whileHover={{ y: -5, boxShadow: "0 10px 30px -15px rgba(0,0,0,0.2)" }}
+                className="bg-white dark:bg-gray-800/90 rounded-xl p-6 shadow-sm hover:shadow-md transition-all border border-gray-100 dark:border-gray-700/30"
               >
-                <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-full w-12 h-12 flex items-center justify-center mb-4">
-                  <PenTool className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-full">
+                    <Plus className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <h3 className="font-medium text-lg">Contribute</h3>
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Contribute</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4 flex-grow">
-                  Help others by adding scholarships to our database.
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
+                  Help others by adding scholarships you've discovered to our database.
                 </p>
                 <Button
-                  variant="outline"
-                  className="flex items-center gap-2"
                   onClick={() => navigate('/contribute')}
+                  className="w-full bg-gray-50 hover:bg-gray-100 dark:bg-gray-700/50 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-600/30"
                 >
-                  <Plus className="w-4 h-4" />
-                  <span>Contribute Scholarship</span>
+                  Add Scholarship
                 </Button>
               </motion.div>
             </div>
             
-            {/* Plus Features Section (only shown to free users) */}
+            {/* Plus Features - More Subtle */}
             {!isSubscribed && (
               <motion.div 
                 variants={itemVariants}
-                className="mt-12 p-6 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-xl border border-indigo-200 dark:border-indigo-800/30"
+                className="mt-12 p-8 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-900/50 rounded-xl border border-gray-200/50 dark:border-gray-700/30"
               >
-                <h2 className="text-2xl font-bold mb-4 text-center">Unlock Premium Features</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
-                    <Zap className="w-8 h-8 text-yellow-500 mb-2" />
-                    <h3 className="font-semibold mb-1">AI Essay Assistance</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Get help writing winning scholarship essays</p>
+                <h2 className="text-xl font-medium mb-6 text-center">Unlock Premium Features</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                  <div className="bg-white dark:bg-gray-800/80 p-5 rounded-lg shadow-sm">
+                    <Zap className="w-6 h-6 text-amber-500 mb-3" />
+                    <h3 className="font-medium mb-2">AI Essay Assistance</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Get help writing winning scholarship essays</p>
                   </div>
-                  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
-                    <Bookmark className="w-8 h-8 text-green-500 mb-2" />
-                    <h3 className="font-semibold mb-1">Unlimited Saves</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Save as many scholarships as you want</p>
+                  <div className="bg-white dark:bg-gray-800/80 p-5 rounded-lg shadow-sm">
+                    <Bookmark className="w-6 h-6 text-emerald-500 mb-3" />
+                    <h3 className="font-medium mb-2">Unlimited Saves</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Save as many scholarships as you want</p>
                   </div>
-                  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
-                    <FileText className="w-8 h-8 text-blue-500 mb-2" />
-                    <h3 className="font-semibold mb-1">Auto-Fill Applications</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Save time with automatic form filling</p>
+                  <div className="bg-white dark:bg-gray-800/80 p-5 rounded-lg shadow-sm">
+                    <FileText className="w-6 h-6 text-blue-500 mb-3" />
+                    <h3 className="font-medium mb-2">Auto-Fill Applications</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Save time with automatic form filling</p>
                   </div>
                 </div>
                 <div className="text-center">
                   {isSubscribed ? (
-                    <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 font-medium">
-                      <Sparkles className="w-5 h-5" />
+                    <div className="inline-flex items-center gap-2 text-purple-600 dark:text-purple-400 font-medium px-4 py-2 bg-purple-50 dark:bg-purple-900/20 rounded-full">
+                      <Sparkles className="w-4 h-4" />
                       <span>Plus Member</span>
                     </div>
                   ) : (
@@ -528,14 +523,14 @@ export function Dashboard({ userAnswers }: DashboardProps) {
               </motion.div>
             )}
             
-            {/* Recent Activity Feed (for Plus users) */}
+            {/* Activity Feed - More Minimalist */}
             {isSubscribed && (
               <motion.div variants={itemVariants} className="mt-12">
-                <h2 className="text-2xl font-bold mb-4">Recent Activity</h2>
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+                <h2 className="text-xl font-medium mb-4">Recent Activity</h2>
+                <div className="bg-white dark:bg-gray-800/90 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700/30">
                   <div className="space-y-4">
-                    <div className="flex items-center gap-3 p-3 border-b border-gray-100 dark:border-gray-700">
-                      <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full">
+                    <div className="flex items-center gap-3 p-3 border-b border-gray-100 dark:border-gray-700/30">
+                      <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-full">
                         <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
                       </div>
                       <div>
@@ -543,8 +538,8 @@ export function Dashboard({ userAnswers }: DashboardProps) {
                         <p className="text-xs text-gray-500 dark:text-gray-400">2 days ago</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 p-3 border-b border-gray-100 dark:border-gray-700">
-                      <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                    <div className="flex items-center gap-3 p-3 border-b border-gray-100 dark:border-gray-700/30">
+                      <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-full">
                         <Zap className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                       </div>
                       <div>
@@ -553,7 +548,7 @@ export function Dashboard({ userAnswers }: DashboardProps) {
                       </div>
                     </div>
                     <div className="flex items-center gap-3 p-3">
-                      <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-full">
+                      <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-full">
                         <Crown className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                       </div>
                       <div>

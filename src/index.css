@@ -221,3 +221,58 @@
 }
 
 /* etc. */
+
+/* Add these gamification elements to your CSS */
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.pulse-animation {
+  animation: pulse 2s infinite;
+}
+
+.achievement-badge {
+  @apply relative inline-flex items-center justify-center;
+}
+
+.achievement-badge::after {
+  content: "";
+  @apply absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full border-2 border-white dark:border-gray-800;
+}
+
+.confetti-animation {
+  position: relative;
+  overflow: hidden;
+}
+
+.confetti-animation::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: 0;
+  right: 0;
+  height: 10px;
+  background-image: 
+    radial-gradient(circle, #ff0000 2px, transparent 2px),
+    radial-gradient(circle, #00ff00 2px, transparent 2px),
+    radial-gradient(circle, #0000ff 2px, transparent 2px),
+    radial-gradient(circle, #ffff00 2px, transparent 2px),
+    radial-gradient(circle, #00ffff 2px, transparent 2px);
+  background-size: 10px 10px;
+  animation: confetti-fall 3s linear infinite;
+}
+
+@keyframes confetti-fall {
+  0% { transform: translateY(-10px); }
+  100% { transform: translateY(400px); }
+}
+
+/* Theme Plus Styles - Make sure these are applied */
+.theme-plus .btn-primary {
+  @apply bg-gradient-to-r from-purple-600 to-indigo-600;
+}
+
+.theme-plus .feature-card:hover {
+  @apply border-purple-500/30;
+}

@@ -29,10 +29,10 @@ export default async function handler(req, res) {
     
     console.log(`Creating checkout session for ${email}`);
     
-    // Create a product first (or use an existing one)
+    // Create a product with a unique name to avoid caching issues
     const product = await stripe.products.create({
-      name: 'AidMatch Plus Subscription',
-      description: 'Monthly subscription to AidMatch Plus',
+      name: `AidMatch Plus Subscription - ${new Date().toISOString()}`,
+      description: 'Monthly subscription to AidMatch Plus - $9/month',
     });
     
     // Create a price for the product

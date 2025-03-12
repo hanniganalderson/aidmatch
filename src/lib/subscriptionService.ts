@@ -101,190 +101,37 @@ function createDiagnosticOverlay(): { log: (message: string) => void, close: () 
 }
 
 /**
- * Creates a Stripe checkout session for subscription upgrade with detailed diagnostics
+ * Creates a Stripe checkout session for subscription upgrade
  * @param email User's email for the checkout session
  * @returns Promise that resolves when the checkout process has started
  */
 export async function createCheckoutSession(email: string): Promise<void> {
-  // Remove diagnostic overlay
-  // const diagnostic = createDiagnosticOverlay();
-  const log = (message: string) => {
-    console.log(`CHECKOUT: ${message}`);
-    // Don't call onDiagnostic to prevent UI logs
-  };
-  
-  log(`Starting checkout for ${email}`);
+  console.log(`Starting checkout for ${email}`);
   
   try {
-    // Check environment
-    log('🌐 Environment check:');
-    log(`URL: ${window.location.href}`);
-    log(`User Agent: ${navigator.userAgent}`);
+    // Simple direct fetch to the API
+    const response = await fetch('/api/create-checkout-session', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: email,
+        subscriptionType: 'plus'
+      }),
+    });
     
-    // Try direct URL to see if the server is accessible at all
-    log('🔄 Testing server connectivity...');
-    
-    try {
-      const pingResponse = await fetch('/api/ping', { 
-        method: 'GET',
-        headers: { 'Cache-Control': 'no-cache' }
-      });
-      log(`Ping response: ${pingResponse.status} ${pingResponse.statusText}`);
-    } catch (pingError) {
-      log(`⚠️ Ping failed: ${pingError instanceof Error ? pingError.message : String(pingError)}`);
-    }
-    
-    // Define possible API endpoints to try in order
-    const endpoints: string[] = [
-      '/api/create-checkout-session',                // Next.js API route
-      '/.netlify/functions/create-checkout-session', // Netlify function
-      '/supabase/functions/create-checkout-session', // Supabase edge function
-      '/stripe/create-checkout-session',             // Custom route
-      '/functions/create-checkout-session',          // Firebase function
-      `${window.location.origin}/api/create-checkout-session`, // Absolute URL
-      `/create-checkout-session`,                    // Root path
-      `/checkout`,                                   // Simple path
-    ];
-    
-    log(`📝 Will try ${endpoints.length} possible endpoints`);
-    
-    let response: Response | null = null;
-    let lastError: Error | null = null;
-    let successfulEndpoint: string | null = null;
-    
-    // Try each endpoint until one works
-    for (const endpoint of endpoints) {
-      log(`🔍 Trying endpoint: ${endpoint}`);
-      
-      try {
-        // Add a random query parameter to avoid caching
-        const cacheBuster = `?cb=${Date.now()}`;
-        const fullUrl = `${endpoint}${cacheBuster}`;
-        
-        // Use a timeout to avoid hanging
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
-        
-        log(`📤 Sending POST request to ${fullUrl}...`);
-        
-        response = await fetch(fullUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache',
-          },
-          body: JSON.stringify({ email }),
-          signal: controller.signal,
-        });
-        
-        clearTimeout(timeoutId);
-        
-        log(`📥 Response from ${endpoint}: ${response.status} ${response.statusText}`);
-        
-        // Log response headers for debugging
-        const headerEntries = Array.from(response.headers.entries());
-        if (headerEntries.length > 0) {
-          log(`Response headers: ${JSON.stringify(Object.fromEntries(headerEntries))}`);
-        }
-        
-        // If we get a successful response, save it and break
-        if (response.ok) {
-          successfulEndpoint = endpoint;
-          log(`✅ SUCCESS with endpoint: ${endpoint}`);
-          break;
-        } else if (response.status !== 404) {
-          // If we get an error that's not a 404, still break (it's a valid endpoint with an error)
-          successfulEndpoint = endpoint;
-          log(`⚠️ Non-404 error with endpoint: ${endpoint} (status ${response.status})`);
-          break;
-        }
-        
-        // If we get a 404, continue to the next endpoint
-        log(`❌ 404 Not Found for ${endpoint}, will try next endpoint`);
-      } catch (e) {
-        const errorMsg = e instanceof Error ? e.message : String(e);
-        log(`⚠️ Network error with ${endpoint}: ${errorMsg}`);
-        lastError = e instanceof Error ? e : new Error(String(e));
-      }
-    }
-    
-    // If we didn't get any response, throw the last error
-    if (!response) {
-      const errorMsg = lastError ? lastError.message : 'Failed to connect to any API endpoint';
-      log(`❌ FATAL: ${errorMsg}`);
-      throw lastError || new Error('Failed to connect to any API endpoint');
-    }
-
-    // Try to get the response text for diagnostics
-    log('📄 Attempting to read response body...');
-    const responseText = await response.text();
-    log(`Response body (first 200 chars): ${responseText.substring(0, 200)}${responseText.length > 200 ? '...' : ''}`);
-    
-    // Parse the JSON
-    let data;
-    try {
-      data = JSON.parse(responseText);
-      log('✅ Successfully parsed JSON response');
-    } catch (jsonError) {
-      log(`❌ Failed to parse JSON: ${jsonError instanceof Error ? jsonError.message : String(jsonError)}`);
-      throw new Error(`Server error: Invalid JSON response from ${successfulEndpoint}`);
-    }
-
-    // Check if the response was ok
     if (!response.ok) {
-      const errorMessage = data.error || `Error: ${response.status}`;
-      log(`❌ API error: ${errorMessage}`);
-      throw new Error(errorMessage);
-    }
-
-    // Check for a valid URL
-    if (!data.url) {
-      log('❌ ERROR: No checkout URL returned from server');
-      throw new Error('No checkout URL returned from server');
+      throw new Error(`Request failed with status ${response.status}`);
     }
     
-    log(`✅ Got checkout URL: ${data.url.substring(0, 40)}...`);
+    const data = await response.json();
     
-    // Track the checkout initiation event
-    try {
-      log('📊 Logging checkout event to Supabase...');
-      await supabase.from('user_events').insert({
-        event_type: 'checkout_initiated',
-        user_email: email,
-        metadata: { 
-          timestamp: new Date().toISOString(),
-          successful_endpoint: successfulEndpoint
-        }
-      });
-      log('✅ Successfully logged checkout event to Supabase');
-    } catch (eventError) {
-      log(`⚠️ Failed to track checkout event: ${eventError instanceof Error ? eventError.message : String(eventError)}`);
-    }
-
-    // Set a brief delay to ensure logs are visible before redirect
-    log(`⏱️ Redirecting to Stripe in 3 seconds...`);
-    
-    // Store successful endpoint in localStorage for future use
-    if (successfulEndpoint) {
-      try {
-        localStorage.setItem('successfulCheckoutEndpoint', successfulEndpoint);
-        log(`💾 Saved successful endpoint for future use: ${successfulEndpoint}`);
-      } catch (storageError) {
-        log(`⚠️ Unable to save endpoint to localStorage: ${storageError instanceof Error ? storageError.message : String(storageError)}`);
-      }
-    }
-    
-    setTimeout(() => {
-      log('🚀 Redirecting now!');
-      window.location.href = data.url;
-    }, 3000);
+    // Redirect to Stripe
+    window.location.href = data.url;
     
   } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    log(`❌ FATAL ERROR: ${errorMsg}`);
     console.error('Checkout error:', error);
-    
-    // Keep the diagnostic window visible for errors
     throw error;
   }
 }

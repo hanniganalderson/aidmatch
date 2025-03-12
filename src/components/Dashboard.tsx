@@ -387,7 +387,7 @@ export function Dashboard({ userAnswers }: DashboardProps) {
   
   // Main component return
   return (
-    <ProtectedRoute requireQuestionnaire={false}>
+    <ProtectedRoute requireQuestionnaire={false} skipQuestionnaireCheck={true}>
       <div className="min-h-screen py-12 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
         <div className="container mx-auto px-4">
           <motion.div
@@ -396,106 +396,165 @@ export function Dashboard({ userAnswers }: DashboardProps) {
             variants={containerVariants}
             className="max-w-6xl mx-auto"
           >
-            {/* Dashboard Header */}
-            {isSubscribed ? (
-              <PremiumDashboardHeader />
-            ) : (
-              <motion.div variants={itemVariants} className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                  Your Dashboard
-                </h1>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Track your saved scholarships and get personalized recommendations.
-                </p>
-              </motion.div>
-            )}
+            {/* Gamified Dashboard Header */}
+            <motion.div variants={itemVariants} className="mb-8 text-center">
+              <h1 className="text-4xl font-bold mb-2 gradient-text">
+                {isSubscribed ? "Your Plus Dashboard" : "Your Scholarship Journey"}
+              </h1>
+              
+              {/* Progress Bar */}
+              <div className="w-full bg-gray-200 dark:bg-gray-700 h-4 rounded-full mt-6 mb-2 overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-1000"
+                  style={{ width: `${Math.min((savedScholarships.length / 5) * 100, 100)}%` }}
+                ></div>
+              </div>
+              
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {savedScholarships.length > 0 
+                  ? `You've saved ${savedScholarships.length} scholarships! ${isSubscribed ? '✨ Plus member bonus: Unlimited saves!' : 'Upgrade to save unlimited scholarships!'}`
+                  : "Start your journey by saving scholarships that match your profile!"}
+              </p>
+            </motion.div>
             
-            {/* Questionnaire Banner */}
-            {showQuestionnaireBanner && (
+            {/* Core Features Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+              {/* AI Scholarship Results */}
               <motion.div 
                 variants={itemVariants}
-                className="mb-6 p-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/30 rounded-xl"
+                className="feature-card flex flex-col h-full"
+                whileHover={{ y: -5, boxShadow: "0 10px 30px -15px rgba(0,0,0,0.2)" }}
               >
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-indigo-100 dark:bg-indigo-800/50 rounded-full">
-                    <AlertCircle className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                  <Search className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">AI Scholarship Matches</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4 flex-grow">
+                  Discover scholarships tailored to your profile with our AI matching system.
+                </p>
+                <Button
+                  onClick={() => navigate('/scholarships')}
+                  className="w-full mt-auto"
+                >
+                  Find Matches
+                </Button>
+              </motion.div>
+              
+              {/* Saved Scholarships */}
+              <motion.div 
+                variants={itemVariants}
+                className="feature-card flex flex-col h-full"
+                whileHover={{ y: -5, boxShadow: "0 10px 30px -15px rgba(0,0,0,0.2)" }}
+              >
+                <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                  <Bookmark className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Saved Scholarships</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4 flex-grow">
+                  {isSubscribed 
+                    ? "Save unlimited scholarships with your Plus membership."
+                    : "Save your favorite scholarships to apply later."}
+                </p>
+                <Button
+                  onClick={() => navigate('/saved')}
+                  className="w-full mt-auto"
+                >
+                  View Saved
+                </Button>
+              </motion.div>
+              
+              {/* Contribute Scholarships */}
+              <motion.div 
+                variants={itemVariants}
+                className="feature-card flex flex-col h-full"
+                whileHover={{ y: -5, boxShadow: "0 10px 30px -15px rgba(0,0,0,0.2)" }}
+              >
+                <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                  <PenTool className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Contribute</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4 flex-grow">
+                  Help others by adding scholarships to our database.
+                </p>
+                <Button
+                  onClick={() => navigate('/contribute')}
+                  className="w-full mt-auto"
+                >
+                  Add Scholarship
+                </Button>
+              </motion.div>
+            </div>
+            
+            {/* Plus Features Section (only shown to free users) */}
+            {!isSubscribed && (
+              <motion.div 
+                variants={itemVariants}
+                className="mt-12 p-6 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-xl border border-indigo-200 dark:border-indigo-800/30"
+              >
+                <h2 className="text-2xl font-bold mb-4 text-center">Unlock Premium Features</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
+                    <Zap className="w-8 h-8 text-yellow-500 mb-2" />
+                    <h3 className="font-semibold mb-1">AI Essay Assistance</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Get help writing winning scholarship essays</p>
                   </div>
-                  <div>
-                    <h3 className="font-medium text-gray-900 dark:text-white">Complete Your Profile</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                      Fill out the questionnaire to get personalized scholarship recommendations.
-                    </p>
-                    <Button
-                      onClick={() => navigate('/questionnaire')}
-                      className="text-sm"
-                    >
-                      Complete Profile
-                    </Button>
+                  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
+                    <Bookmark className="w-8 h-8 text-green-500 mb-2" />
+                    <h3 className="font-semibold mb-1">Unlimited Saves</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Save as many scholarships as you want</p>
                   </div>
+                  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
+                    <FileText className="w-8 h-8 text-blue-500 mb-2" />
+                    <h3 className="font-semibold mb-1">Auto-Fill Applications</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Save time with automatic form filling</p>
+                  </div>
+                </div>
+                <div className="text-center">
+                  <CheckoutButton 
+                    size="lg"
+                    variant="premium"
+                    className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-medium transition-colors shadow-md"
+                  />
                 </div>
               </motion.div>
             )}
             
-            {/* Feature usage indicators for free users */}
-            {!isSubscribed && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <FeatureLimitIndicator 
-                  featureName={FeatureName.SAVED_SCHOLARSHIPS} 
-                  variant="banner"
-                />
-                <FeatureLimitIndicator 
-                  featureName={FeatureName.AI_RECOMMENDATIONS} 
-                  variant="banner"
-                />
-              </div>
-            )}
-            
-            {/* Main content */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-              <div className="lg:col-span-2 space-y-6">
-                {/* Saved Scholarships Section */}
-                <ErrorBoundary>
-                  {renderSavedScholarshipsSection()}
-                </ErrorBoundary>
-                
-                {/* AI Recommendations Section */}
-                <ErrorBoundary>
-                  {isSubscribed ? (
-                    <PremiumFeatureCard
-                      title="AI Recommendations"
-                      description="Personalized scholarship matches based on your profile"
-                      icon={<Sparkles className="w-5 h-5" />}
-                    >
-                      {renderAIRecommendationsSection()}
-                    </PremiumFeatureCard>
-                  ) : (
-                    <PremiumFeature 
-                      featureName={FeatureName.AI_RECOMMENDATIONS}
-                      locked={false}
-                    >
-                      {renderAIRecommendationsSection()}
-                    </PremiumFeature>
-                  )}
-                </ErrorBoundary>
-              </div>
-              
-              {/* Right Column */}
-              <div className="space-y-6">
-                {isSubscribed && (
-                  <PremiumAccountSettings />
-                )}
-                
-                <ErrorBoundary>
-                  {renderFinancialResourcesSection()}
-                </ErrorBoundary>
-              </div>
-            </div>
-            
-            {/* Add this after the main content section for Plus subscribers */}
+            {/* Recent Activity Feed (for Plus users) */}
             {isSubscribed && (
-              <div className="mt-12">
-                <PremiumFeaturesShowcase />
-              </div>
+              <motion.div variants={itemVariants} className="mt-12">
+                <h2 className="text-2xl font-bold mb-4">Recent Activity</h2>
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 p-3 border-b border-gray-100 dark:border-gray-700">
+                      <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full">
+                        <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">You saved "Engineering Scholarship"</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">2 days ago</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 border-b border-gray-100 dark:border-gray-700">
+                      <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                        <Zap className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">AI Essay Assistant used</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">3 days ago</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3">
+                      <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-full">
+                        <Crown className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">You upgraded to Plus!</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">1 week ago</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
             )}
           </motion.div>
         </div>

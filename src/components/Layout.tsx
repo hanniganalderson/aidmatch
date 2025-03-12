@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Header } from './Header';
 import { Footer } from './Footer';
 import { ThemeProvider, useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
 
 interface LayoutProps {
   children: ReactNode;
@@ -10,6 +11,7 @@ interface LayoutProps {
 
 function LayoutContent({ children }: LayoutProps) {
   const { theme } = useTheme();
+  const { isSubscribed } = useAuth();
   
   // Reset scroll position on navigation
   useEffect(() => {
@@ -23,6 +25,15 @@ function LayoutContent({ children }: LayoutProps) {
       document.documentElement.style.scrollBehavior = 'auto';
     };
   }, []);
+  
+  useEffect(() => {
+    // Add or remove a class to the root element based on subscription status
+    if (isSubscribed) {
+      document.documentElement.classList.add('theme-plus');
+    } else {
+      document.documentElement.classList.remove('theme-plus');
+    }
+  }, [isSubscribed]);
   
   return (
     <div className="min-h-screen flex flex-col relative bg-white dark:bg-surface-dark-200 text-gray-900 dark:text-gray-100 transition-colors duration-300 overflow-hidden">

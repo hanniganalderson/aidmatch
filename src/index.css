@@ -7,6 +7,9 @@
     --color-bg-secondary: 241 245 249;
     --color-text-primary: 15 23 42;
     --color-text-secondary: 71 85 105;
+    --primary-color: #10b981; /* Green */
+    --primary-light: #d1fae5;
+    --primary-dark: #059669;
   }
 
   .dark {
@@ -201,3 +204,20 @@
     @apply px-4 py-3;
   }
 }
+
+.theme-plus {
+  --primary-color: #8b5cf6; /* Purple */
+  --primary-light: #ede9fe;
+  --primary-dark: #7c3aed;
+}
+
+/* Update all your color references to use these variables */
+.bg-primary {
+  background-color: var(--primary-color);
+}
+
+.text-primary {
+  color: var(--primary-color);
+}
+
+/* etc. */

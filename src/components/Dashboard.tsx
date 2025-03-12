@@ -387,7 +387,7 @@ export function Dashboard({ userAnswers }: DashboardProps) {
   
   // Main component return
   return (
-    <ProtectedRoute>
+    <ProtectedRoute requireQuestionnaire={false}>
       <div className="min-h-screen py-12 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
         <div className="container mx-auto px-4">
           <motion.div

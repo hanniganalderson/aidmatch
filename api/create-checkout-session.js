@@ -38,7 +38,7 @@ export default async function handler(req, res) {
     // Create a price for the product
     const price = await stripe.prices.create({
       product: product.id,
-      unit_amount: 1499, // $14.99 in cents
+      unit_amount: 900, // $9.00 in cents
       currency: 'usd',
       recurring: {
         interval: 'month',

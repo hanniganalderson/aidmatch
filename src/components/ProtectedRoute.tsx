@@ -122,7 +122,8 @@ export function ProtectedRoute({
       !hasCompletedQuestionnaire && 
       !location.pathname.includes('/questionnaire') && 
       requireAuth && 
-      !shouldSkipQuestionnaireCheck) {
+      !shouldSkipQuestionnaireCheck &&
+      requireQuestionnaire) {
     return <Navigate to="/questionnaire" replace />;
   }
 

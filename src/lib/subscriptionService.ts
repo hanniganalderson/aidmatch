@@ -106,11 +106,14 @@ function createDiagnosticOverlay(): { log: (message: string) => void, close: () 
  * @returns Promise that resolves when the checkout process has started
  */
 export async function createCheckoutSession(email: string): Promise<void> {
-  const diagnostic = createDiagnosticOverlay();
-  const { log } = diagnostic;
+  // Remove diagnostic overlay
+  // const diagnostic = createDiagnosticOverlay();
+  const log = (message: string) => {
+    console.log(`CHECKOUT: ${message}`);
+    // Don't call onDiagnostic to prevent UI logs
+  };
   
-  log('🚀 Starting checkout diagnostic...');
-  log(`📧 Email: ${email}`);
+  log(`Starting checkout for ${email}`);
   
   try {
     // Check environment

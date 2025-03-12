@@ -34,7 +34,7 @@ export function FeatureLimitIndicator({
     isSubscribed
   } = useFeatureUsage(featureName);
   
-  const feature = FEATURE_LIMITS[featureName];
+  const feature = FEATURE_LIMITS[featureName as keyof typeof FEATURE_LIMITS];
   const percentage = Math.min(Math.round((usage.count / limit) * 100), 100);
   
   // If user is subscribed, don't show any limit indicator

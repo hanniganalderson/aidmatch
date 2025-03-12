@@ -29,24 +29,29 @@ export default async function handler(req, res) {
     
     console.log(`Creating checkout session for ${email}`);
     
-    // Create Stripe checkout session with correct line_items format
+    // Create a product first (or use an existing one)
+    const product = await stripe.products.create({
+      name: 'AidMatch Plus Subscription',
+      description: 'Monthly subscription to AidMatch Plus',
+    });
+    
+    // Create a price for the product
+    const price = await stripe.prices.create({
+      product: product.id,
+      unit_amount: 1499, // $14.99 in cents
+      currency: 'usd',
+      recurring: {
+        interval: 'month',
+      },
+    });
+    
+    // Create Stripe checkout session with the price ID
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       customer_email: email,
       line_items: [
         {
-          // Use price_data instead of price if you don't have a price ID
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: 'AidMatch Plus Subscription',
-              description: 'Monthly subscription to AidMatch Plus',
-            },
-            unit_amount: 1499, // $14.99 in cents
-            recurring: {
-              interval: 'month',
-            },
-          },
+          price: price.id,
           quantity: 1,
         },
       ],

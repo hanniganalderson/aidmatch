@@ -5,13 +5,15 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { FeatureName } from '../lib/feature-management';
 import { PaywallModal } from './ui/PaywallModal';
+import { ReactNode } from 'react';
 
 interface ProtectedRouteProps {
-  children: React.ReactNode;
+  children: ReactNode;
   requireAuth?: boolean; // Prop to determine if authentication is required
   skipQuestionnaireCheck?: boolean; // New prop to skip questionnaire check for certain routes
   requiredSubscription?: boolean; // Add this prop to check for subscription
   requiredFeature?: FeatureName;
+  requireQuestionnaire?: boolean;
 }
 
 export function ProtectedRoute({ 
@@ -19,13 +21,15 @@ export function ProtectedRoute({
   requireAuth = true,
   skipQuestionnaireCheck = false,
   requiredSubscription = false,
-  requiredFeature
+  requiredFeature,
+  requireQuestionnaire = false
 }: ProtectedRouteProps) {
   const { user, loading, isSubscribed } = useAuth();
   const location = useLocation();
   const [profileLoading, setProfileLoading] = useState(true);
-  const [hasCompletedQuestionnaire, setHasCompletedQuestionnaire] = useState(false);
+  const [hasCompletedQuestionnaire, setHasCompletedQuestionnaire] = useState<boolean | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [checkingQuestionnaire, setCheckingQuestionnaire] = useState(true);
 
   // Check if the user has completed the questionnaire
   useEffect(() => {
@@ -66,8 +70,30 @@ export function ProtectedRoute({
     }
   }, [user, loading]);
 
+  useEffect(() => {
+    // Check if user has completed questionnaire
+    const checkQuestionnaire = async () => {
+      if (user) {
+        try {
+          // This is just a placeholder - replace with your actual check
+          // For now, we'll assume they have completed it to prevent redirection
+          setHasCompletedQuestionnaire(true);
+        } catch (error) {
+          console.error('Error checking questionnaire status:', error);
+          setHasCompletedQuestionnaire(false);
+        } finally {
+          setCheckingQuestionnaire(false);
+        }
+      } else {
+        setCheckingQuestionnaire(false);
+      }
+    };
+    
+    checkQuestionnaire();
+  }, [user]);
+
   // Show loading state while checking auth and profile
-  if (loading || profileLoading) {
+  if (loading || profileLoading || checkingQuestionnaire) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>

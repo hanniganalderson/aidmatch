@@ -424,12 +424,6 @@ export function Plus(): JSX.Element {
             </div>
           </motion.div>
         </motion.div>
-
-        <div className="mt-4">
-          <h3 className="text-lg font-medium mb-2">Having trouble with checkout?</h3>
-          <p className="text-sm text-gray-600 mb-4">Try our simplified checkout process:</p>
-          <SimpleCheckoutButton />
-        </div>
       </div>
 
       {/* Add floating animation keyframes */}

@@ -29,6 +29,7 @@ import { SubscriptionSuccessPage } from './pages/SubscriptionSuccessPage';
 import { EssayAssistant } from './pages/tools/EssayAssistant';
 import { FinancialOptimizer } from './pages/tools/FinancialOptimizer';
 import { DeadlineTracker } from './pages/tools/DeadlineTracker';
+import { AutoFillApplications } from './pages/tools/AutoFillApplications';
 
 // Import animation styles
 import './styles/animations.css';
@@ -225,6 +226,7 @@ function AppContent() {
         <Route path="/tools/essay-assistant" element={<EssayAssistant />} />
         <Route path="/tools/financial-optimizer" element={<FinancialOptimizer />} />
         <Route path="/tools/deadline-tracker" element={<DeadlineTracker />} />
+        <Route path="/tools/auto-fill" element={<AutoFillApplications />} />
       </Routes>
     </Layout>
   );

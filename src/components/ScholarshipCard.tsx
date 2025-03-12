@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   DollarSign, Clock, Users, ArrowRight, Brain, Trophy, 
@@ -7,6 +7,10 @@ import {
 } from 'lucide-react';
 import { Badge } from './ui/badge';
 import type { ScoredScholarship } from '../types';
+import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'react-hot-toast';
+import { Button } from './ui/button';
+import { useNavigate } from 'react-router-dom';
 
 interface ScholarshipCardProps {
   scholarship: ScoredScholarship;
@@ -31,6 +35,10 @@ export function ScholarshipCard({
   index,
   isAIGenerated = false
 }: ScholarshipCardProps) {
+  const { isSubscribed } = useAuth();
+  const [savedScholarships, setSavedScholarships] = useState<string[]>([]);
+  const navigate = useNavigate();
+
   // Format date
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'No deadline';
@@ -68,6 +76,29 @@ export function ScholarshipCard({
     isAIGenerated
   );
   
+  const handleSave = async () => {
+    if (!isSubscribed && savedScholarships.length >= 3) {
+      toast.error(
+        <div className="flex flex-col gap-2">
+          <span className="font-medium">Free plan limit reached</span>
+          <span className="text-sm">Upgrade to Plus to save unlimited scholarships</span>
+          <Button 
+            size="sm" 
+            onClick={() => navigate('/plus')}
+            className="mt-2 bg-gradient-to-r from-indigo-600 to-purple-600"
+          >
+            Upgrade to Plus
+          </Button>
+        </div>,
+        { duration: 5000 }
+      );
+      return;
+    }
+    
+    // Proceed with saving the scholarship
+    // ...
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -197,7 +228,7 @@ export function ScholarshipCard({
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => onSave(scholarship)}
+              onClick={handleSave}
               className={`mt-2 px-3 py-2 rounded-lg flex items-center gap-2 transition-all ${isSaved
                 ? 'bg-primary-500 text-white' 
                 : 'bg-primary-500/10 text-primary-600 dark:text-primary-400 hover:bg-primary-500/20'}`}

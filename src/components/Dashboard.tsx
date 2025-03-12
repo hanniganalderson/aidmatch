@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Sparkles, Bookmark, Calendar, Award, DollarSign, 
   ArrowRight, TrendingUp, Crown, Search, AlertCircle,
-  CheckCircle, Lock, Bell, RefreshCw, Zap, FileText, PenTool
+  CheckCircle, Lock, Bell, RefreshCw, Zap, FileText, PenTool, Plus
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
@@ -477,10 +477,12 @@ export function Dashboard({ userAnswers }: DashboardProps) {
                   Help others by adding scholarships to our database.
                 </p>
                 <Button
+                  variant="outline"
+                  className="flex items-center gap-2"
                   onClick={() => navigate('/contribute')}
-                  className="w-full mt-auto"
                 >
-                  Add Scholarship
+                  <Plus className="w-4 h-4" />
+                  <span>Contribute Scholarship</span>
                 </Button>
               </motion.div>
             </div>
@@ -510,11 +512,18 @@ export function Dashboard({ userAnswers }: DashboardProps) {
                   </div>
                 </div>
                 <div className="text-center">
-                  <CheckoutButton 
-                    size="lg"
-                    variant="premium"
-                    className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-medium transition-colors shadow-md"
-                  />
+                  {isSubscribed ? (
+                    <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 font-medium">
+                      <Sparkles className="w-5 h-5" />
+                      <span>Plus Member</span>
+                    </div>
+                  ) : (
+                    <CheckoutButton 
+                      size="lg"
+                      variant="premium"
+                      className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-medium transition-colors shadow-md"
+                    />
+                  )}
                 </div>
               </motion.div>
             )}

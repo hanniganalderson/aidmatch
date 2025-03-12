@@ -10,7 +10,7 @@ const ENDPOINTS = {
 // Determine the correct endpoint based on environment
 const getCheckoutEndpoint = () => {
   // For local development
-  if (window.location.hostname === 'localhost') {
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     return ENDPOINTS.DEVELOPMENT; // Use local development server
   }
   
@@ -20,15 +20,15 @@ const getCheckoutEndpoint = () => {
 
 interface CheckoutOptions {
   email: string;
-  subscriptionType: 'free' | 'plus';
+  subscriptionType?: 'plus';
   onSuccess?: (url: string) => void;
-  onError?: (error: any) => void;
+  onError?: (error: Error) => void;
   onDiagnostic?: (message: string) => void;
 }
 
 export async function createCheckoutSession({
   email,
-  subscriptionType,
+  subscriptionType = 'plus',
   onSuccess,
   onError,
   onDiagnostic
@@ -92,7 +92,7 @@ export async function createCheckoutSession({
     
   } catch (error) {
     logDiagnostic(`Checkout error: ${error instanceof Error ? error.message : String(error)}`);
-    if (onError) onError(error);
+    if (onError) onError(error instanceof Error ? error : new Error(String(error)));
     throw error;
   }
 } 

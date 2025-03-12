@@ -37,7 +37,10 @@ export async function createCheckoutSession({
   
   // Log diagnostic information
   const logDiagnostic = (message: string) => {
-    console.log(`CHECKOUT: ${message}`);
+    // Only log in development mode
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`CHECKOUT: ${message}`);
+    }
     if (onDiagnostic) onDiagnostic(message);
   };
   

@@ -1,11 +1,14 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import type { User, AuthError, Session } from '@supabase/supabase-js';
+import { useSubscription } from './SubscriptionContext';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  error: Error | null;
+  isSubscribed: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
@@ -19,6 +22,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const { isSubscribed } = useSubscription();
 
   useEffect(() => {
     // Check active sessions and sets the user
@@ -115,6 +121,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user, 
       session, 
       loading, 
+      error,
+      isSubscribed,
       signIn, 
       signUp, 
       signInWithGoogle, 

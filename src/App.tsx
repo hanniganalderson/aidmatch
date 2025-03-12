@@ -25,6 +25,7 @@ import BillingPage from './pages/BillingPage';
 import { clearOAuthErrorParams, processHashErrors } from './lib/auth-utils';
 import type { UserAnswers } from './types';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { SubscriptionSuccessPage } from './pages/SubscriptionSuccessPage';
 
 // Import animation styles
 import './styles/animations.css';
@@ -213,6 +214,9 @@ function AppContent() {
             answers={answers} 
           />
         } />
+        
+        {/* Add this route to your router */}
+        <Route path="/subscription-success" element={<SubscriptionSuccessPage />} />
       </Routes>
     </Layout>
   );

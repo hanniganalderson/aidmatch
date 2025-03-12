@@ -22,6 +22,8 @@ import { PremiumFeature } from './ui/PremiumFeature';
 import { PremiumDashboardHeader } from './PremiumDashboardHeader';
 import { PremiumFeatureCard } from './ui/PremiumFeatureCard';
 import { PremiumAccountSettings } from './PremiumAccountSettings';
+import { ErrorBoundary } from './ErrorBoundary';
+import { PremiumFeaturesShowcase } from './PremiumFeaturesShowcase';
 
 interface DashboardProps {
   userAnswers?: UserAnswers;
@@ -814,6 +816,13 @@ export function Dashboard({ userAnswers }: DashboardProps) {
                 </ErrorBoundary>
               </div>
             </div>
+            
+            {/* Add this after the main content section for Plus subscribers */}
+            {isSubscribed && (
+              <div className="mt-12">
+                <PremiumFeaturesShowcase />
+              </div>
+            )}
           </motion.div>
         </div>
       </div>

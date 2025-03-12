@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { FileText, Upload, CheckCircle, AlertCircle, Download } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
+import { Label } from "../../components/ui/label";
 import { ProtectedRoute } from '../../components/ProtectedRoute';
 import { useAuth } from '../../contexts/AuthContext';
 

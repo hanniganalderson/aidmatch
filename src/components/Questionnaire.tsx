@@ -60,6 +60,7 @@ export function Questionnaire({ onSubmit, initialValues = {} }: QuestionnairePro
   const [filteredMajors, setFilteredMajors] = useState<string[]>(FIELDS_OF_STUDY.slice(0, 20));
   const [majorDropdownOpen, setMajorDropdownOpen] = useState(false);
   const [validFields, setValidFields] = useState<Record<string, boolean>>({});
+  const [hasInteractedWithGpa, setHasInteractedWithGpa] = useState(false);
   
   // Initialize answers with defaults
   const [answers, setAnswers] = useState<UserAnswers>({
@@ -192,6 +193,11 @@ export function Questionnaire({ onSubmit, initialValues = {} }: QuestionnairePro
   const handleSchoolSelect = (school: SchoolData) => {
     setAnswers(prev => ({ ...prev, school: school.name }));
     setError(null);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAnswers(prev => ({ ...prev, gpa: e.target.value }));
+    setHasInteractedWithGpa(true);
   };
 
   // Close dropdowns when clicking outside
@@ -470,10 +476,10 @@ export function Questionnaire({ onSubmit, initialValues = {} }: QuestionnairePro
 
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                          <label className="block text-gray-800 dark:text-gray-100 font-medium text-lg">
-                            GPA
+                          <label htmlFor="gpa" className="block text-gray-800 dark:text-gray-100 font-medium text-lg">
+                            What is your GPA?
                           </label>
-                          {validFields.gpa && (
+                          {hasInteractedWithGpa && (
                             <span className="flex items-center text-xs text-green-600 dark:text-green-400">
                               <Check className="w-3.5 h-3.5 mr-1" />
                               Completed
@@ -485,12 +491,17 @@ export function Questionnaire({ onSubmit, initialValues = {} }: QuestionnairePro
                           <span className="text-sm text-gray-700 dark:text-gray-200 font-medium">2.0</span>
                           <input
                             type="range"
-                            min="2.0"
+                            id="gpa"
+                            name="gpa"
+                            min="0"
                             max="4.0"
                             step="0.1"
-                            value={answers.gpa}
-                            onChange={(e) => setAnswers(prev => ({ ...prev, gpa: e.target.value }))}
-                            className="w-full h-2 appearance-none bg-gray-200 dark:bg-gray-700 rounded-full focus:outline-none focus:ring-0 accent-green-500"
+                            value={answers.gpa || 0}
+                            onChange={(e) => {
+                              handleChange(e);
+                              setHasInteractedWithGpa(true);
+                            }}
+                            className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
                           />
                           <span className="text-sm text-gray-700 dark:text-gray-200 font-medium">4.0</span>
                         </div>

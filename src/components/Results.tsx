@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Award, Search, ChevronLeft, ChevronRight, Sparkles, AlertCircle, ChevronUp, ChevronDown } from 'lucide-react';
+import { Award, Search, ChevronLeft, ChevronRight, Sparkles, AlertCircle, ChevronUp, ChevronDown, Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useScholarshipMatching, useSavedScholarships } from '../hooks/useScholarshipMatching';
 import { getAIScholarshipRecommendations, getCachedAIScholarships } from "../lib/AIScholarshipService";
@@ -249,11 +249,20 @@ export function Results({ answers }: ResultsProps) {
             <div className="ml-auto">
               <Button
                 onClick={generateAIRecommendations}
-                className="flex items-center gap-1"
-                size="sm"
+                className="flex items-center gap-2"
+                disabled={isGeneratingAI}
               >
-                <Sparkles className="w-4 h-4" />
-                Generate AI Recommendations
+                {isGeneratingAI ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    Generate AI Recommendations
+                  </>
+                )}
               </Button>
             </div>
           )}
@@ -414,11 +423,20 @@ export function Results({ answers }: ResultsProps) {
                 <div className="mt-8 text-center">
                   <Button
                     onClick={generateAIRecommendations}
+                    className="flex items-center gap-2"
                     disabled={isGeneratingAI}
-                    className="flex items-center gap-2 mx-auto"
                   >
-                    <Sparkles className="w-4 h-4" />
-                    Generate More Recommendations
+                    {isGeneratingAI ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        Generate AI Recommendations
+                      </>
+                    )}
                   </Button>
                 </div>
               </>

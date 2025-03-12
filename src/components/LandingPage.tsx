@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Target, Sparkles, ArrowRight, Check, DollarSign, BookOpen, Clock, Award } from 'lucide-react';
+import { Target, Sparkles, ArrowRight, Check, DollarSign, BookOpen, Clock, Award, Plus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { ScholarshipCarousel } from './ScholarshipCarousel';
@@ -51,6 +51,26 @@ export function LandingPage() {
     triggerOnce: true,
     threshold: 0.1
   });
+
+  // Add these animation variants to the ScholarshipCarousel component
+  const carouselItemVariants = {
+    hidden: { opacity: 0, scale: 0.9 },
+    visible: { 
+      opacity: 1, 
+      scale: 1,
+      transition: { 
+        duration: 0.5,
+        ease: [0.22, 1, 0.36, 1]
+      }
+    },
+    hover: {
+      scale: 1.03,
+      boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+      transition: {
+        duration: 0.2
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen">
@@ -282,8 +302,6 @@ export function LandingPage() {
         </div>
       </section>
 
-
-
       {/* Contribute Section */}
       <section 
         ref={contributeRef}
@@ -335,13 +353,13 @@ export function LandingPage() {
                 <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
                   Adding a scholarship takes less than 5 minutes and helps students find funding for their education.
                 </p>
-                <Button
-                  variant="outline"
-                  size="default"
-                  onClick={() => navigate('/input-scholarships')}
-                  className="bg-white dark:bg-surface-dark-100 hover:bg-gray-50 dark:hover:bg-surface-dark-200 text-gray-800 dark:text-white border border-gray-200 dark:border-gray-700"
+                <Button 
+                  variant="outline" 
+                  className="flex items-center gap-2"
+                  onClick={() => navigate('/contribute')}
                 >
-                  Add a Scholarship
+                  <Plus className="w-4 h-4" />
+                  <span>Contribute Scholarship</span>
                 </Button>
               </div>
             </div>
@@ -353,29 +371,38 @@ export function LandingPage() {
       <section className="py-24 relative">
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto">
-            <Card className="text-center py-12 px-6 border-primary-100 dark:border-primary-900/20 glassmorphic">
+            <motion.div
+              className="text-center py-12 px-6 rounded-2xl border-green-100 dark:border-green-900/20 bg-white dark:bg-gray-800 shadow-xl relative overflow-hidden"
+              initial={{ scale: 0.95, opacity: 0 }}
+              whileInView={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              viewport={{ once: true }}
+            >
+              {/* Add decorative elements */}
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-emerald-500"></div>
+              <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-gradient-to-br from-green-300/20 to-emerald-300/20"></div>
+              <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-gradient-to-tr from-green-300/20 to-emerald-300/20"></div>
+              
+              <h2 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white relative z-10">Ready to Match?</h2>
+              <p className="text-gray-700 dark:text-gray-300 max-w-2xl mx-auto mb-8 relative z-10">
+                Complete our quick questionnaire and get scholarships tailored to your profile.
+              </p>
               <motion.div
-                initial={{ scale: 0.95, opacity: 0 }}
-                whileInView={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.5 }}
-                viewport={{ once: true }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
               >
-                <h2 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Ready to Match?</h2>
-                <p className="text-gray-700 dark:text-gray-300 max-w-2xl mx-auto mb-8">
-                  Complete our quick questionnaire and get scholarships tailored to your profile.
-                </p>
                 <Button
                   variant="gradient"
                   size="lg"
                   onClick={() => navigate('/questionnaire')}
                   icon={<ArrowRight className="w-5 h-5" />}
                   iconPosition="right"
-                  className="shadow-premium-hover"
+                  className="shadow-lg hover:shadow-xl bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white relative z-10"
                 >
                   Start Matching Now
                 </Button>
               </motion.div>
-            </Card>
+            </motion.div>
           </div>
         </div>
       </section>

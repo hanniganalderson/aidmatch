@@ -160,10 +160,10 @@ export function Footer() {
           <div>© {new Date().getFullYear()} AidMatch</div>
           <div className="mt-2 md:mt-0">
             <a 
-              href="mailto:support@aidmatch.io" 
+              href="mailto:support@aidmatch.com" 
               className="hover:text-primary-400 transition-colors"
             >
-              support@aidmatch.io
+              support@aidmatch.com
             </a>
           </div>
         </div>

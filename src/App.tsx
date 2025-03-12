@@ -30,6 +30,7 @@ import { EssayAssistant } from './pages/tools/EssayAssistant';
 import { FinancialOptimizer } from './pages/tools/FinancialOptimizer';
 import { DeadlineTracker } from './pages/tools/DeadlineTracker';
 import { AutoFillApplications } from './pages/tools/AutoFillApplications';
+import { ToastProvider } from './components/ui/toast';
 
 // Import animation styles
 import './styles/animations.css';
@@ -152,6 +153,7 @@ function AppContent() {
         {/* Public routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<SignIn />} />
+        <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/about" element={<About />} />
         <Route path="/plus" element={<Plus />} />
@@ -200,9 +202,9 @@ function AppContent() {
         
         {/* Use simplified dashboard instead */}
         <Route path="/dashboard" element={
-            <ProtectedRoute requireAuth={false}>
-              <Dashboard />
-            </ProtectedRoute>
+          <ProtectedRoute requireAuth={true} requireSubscription={true}>
+            <Dashboard />
+          </ProtectedRoute>
         } />
         
         {/* Routes that require authentication */}
@@ -227,6 +229,13 @@ function AppContent() {
         <Route path="/tools/financial-optimizer" element={<FinancialOptimizer />} />
         <Route path="/tools/deadline-tracker" element={<DeadlineTracker />} />
         <Route path="/tools/auto-fill" element={<AutoFillApplications />} />
+        
+        {/* Add a route for free users */}
+        <Route path="/scholarships" element={
+          <ProtectedRoute requireAuth={true}>
+            <Results answers={answers} />
+          </ProtectedRoute>
+        } />
       </Routes>
     </Layout>
   );
@@ -240,6 +249,7 @@ function App() {
             <AppContent />
           </Router>
         </SubscriptionProvider>
+        <ToastProvider />
       </AuthProvider>
   );
 }

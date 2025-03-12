@@ -8,10 +8,10 @@ import {
 import { Badge } from './ui/badge';
 import type { ScoredScholarship } from '../types';
 import { useAuth } from '../contexts/AuthContext';
-import { toast } from 'react-hot-toast';
 import { Button } from './ui/button';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { showToast } from '../lib/toast';
 
 interface ScholarshipCardProps {
   scholarship: ScoredScholarship;
@@ -78,8 +78,13 @@ export function ScholarshipCard({
   );
   
   const handleSave = async () => {
+    if (!user) {
+      navigate('/signin');
+      return;
+    }
+    
     if (!isSubscribed && savedScholarships.length >= 3) {
-      toast.error(
+      showToast.custom(
         <div className="flex flex-col gap-2">
           <span className="font-medium">Free plan limit reached</span>
           <span className="text-sm">Upgrade to Plus to save unlimited scholarships</span>
@@ -90,8 +95,7 @@ export function ScholarshipCard({
           >
             Upgrade to Plus
           </Button>
-        </div>,
-        { duration: 5000 }
+        </div>
       );
       return;
     }

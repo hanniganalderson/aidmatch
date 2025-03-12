@@ -42,13 +42,23 @@ export function Dashboard({ userAnswers }: DashboardProps) {
   const [profile, setProfile] = useState<UserAnswers | null>(null);
   const [error, setError] = useState<string | null>(null);
   
-  // Safe usage of feature tracking
-  let savedScholarshipsUsage = { hasReachedLimit: false, loading: false };
-  try {
-    savedScholarshipsUsage = useFeatureUsage(FeatureName.SAVED_SCHOLARSHIPS);
-  } catch (err) {
-    console.error('Error using feature usage hook:', err);
-  }
+  // Safe usage of feature tracking - FIX FOR LINE 130
+  // Initialize with default values to avoid potential null/undefined errors
+  const [savedScholarshipsUsage, setSavedScholarshipsUsage] = useState({ 
+    hasReachedLimit: false, 
+    loading: false 
+  });
+  
+  useEffect(() => {
+    try {
+      const usage = useFeatureUsage(FeatureName.SAVED_SCHOLARSHIPS);
+      if (usage) {
+        setSavedScholarshipsUsage(usage);
+      }
+    } catch (err) {
+      console.error('Error using feature usage hook:', err);
+    }
+  }, []);
   
   // Load user profile and saved scholarships
   useEffect(() => {
@@ -407,7 +417,8 @@ export function Dashboard({ userAnswers }: DashboardProps) {
                       <h2 className="text-lg font-bold text-gray-900 dark:text-white">Saved Scholarships</h2>
                     </div>
                     
-                    {!isSubscribed && savedScholarshipsUsage && (
+                    {/* FIX FOR LINE 310: Add proper conditional check for non-subscribed users */}
+                    {!isSubscribed && (
                       <FeatureLimitIndicator 
                         featureName={FeatureName.SAVED_SCHOLARSHIPS}
                         variant="inline"
@@ -425,7 +436,8 @@ export function Dashboard({ userAnswers }: DashboardProps) {
                     )}
                   </div>
                   
-                  {savedScholarshipsUsage && savedScholarshipsUsage.hasReachedLimit && !isSubscribed ? (
+                  {/* Handle saved scholarships display with proper conditionals */}
+                  {!isSubscribed && savedScholarshipsUsage.hasReachedLimit ? (
                     <PremiumFeatureGate
                       feature="Unlimited Saved Scholarships"
                       description="Upgrade to Plus to save and track all your scholarship opportunities in one place."
@@ -702,4 +714,4 @@ export function Dashboard({ userAnswers }: DashboardProps) {
       </div>
     </div>
   );
-}
+};

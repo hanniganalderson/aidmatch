@@ -150,7 +150,7 @@ function AppContent() {
       <Routes>
         {/* Public routes */}
         <Route path="/" element={<LandingPage />} />
-        <Route path="/signin" element={<SignIn />} />
+        <Route path="/login" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/about" element={<About />} />
         <Route path="/plus" element={<Plus />} />
@@ -200,7 +200,7 @@ function AppContent() {
         {/* Use simplified dashboard instead */}
         <Route path="/dashboard" element={
             <ProtectedRoute requireAuth={false}>
-              <Dashboard userAnswers={answers} />
+              <Dashboard />
             </ProtectedRoute>
         } />
         

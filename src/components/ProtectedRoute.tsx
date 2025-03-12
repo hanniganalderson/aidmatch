@@ -71,26 +71,48 @@ export function ProtectedRoute({
   }, [user, loading]);
 
   useEffect(() => {
+    // Skip questionnaire check if specified
+    if (skipQuestionnaireCheck) {
+      setHasCompletedQuestionnaire(true);
+      setCheckingQuestionnaire(false);
+      return;
+    }
+    
     // Check if user has completed questionnaire
-    const checkQuestionnaire = async () => {
-      if (user) {
-        try {
-          // This is just a placeholder - replace with your actual check
-          // For now, we'll assume they have completed it to prevent redirection
-          setHasCompletedQuestionnaire(true);
-        } catch (error) {
-          console.error('Error checking questionnaire status:', error);
+    async function checkQuestionnaire() {
+      if (!user) {
+        setCheckingQuestionnaire(false);
+        return;
+      }
+      
+      try {
+        const { data, error } = await supabase
+          .from('user_answers')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (error) {
+          console.error('Error checking questionnaire:', error);
           setHasCompletedQuestionnaire(false);
-        } finally {
-          setCheckingQuestionnaire(false);
+        } else {
+          // Check if essential fields are completed
+          const hasEssentialFields = data && 
+            data.education_level && 
+            data.major;
+          
+          setHasCompletedQuestionnaire(!!hasEssentialFields);
         }
-      } else {
+      } catch (err) {
+        console.error('Exception checking questionnaire:', err);
+        setHasCompletedQuestionnaire(false);
+      } finally {
         setCheckingQuestionnaire(false);
       }
-    };
+    }
     
     checkQuestionnaire();
-  }, [user]);
+  }, [user, skipQuestionnaireCheck]);
 
   // Show loading state while checking auth and profile
   if (loading || profileLoading || checkingQuestionnaire) {
@@ -104,7 +126,7 @@ export function ProtectedRoute({
 
   // If authentication is required but user is not logged in, redirect to sign in
   if (requireAuth && !user) {
-    return <Navigate to="/signin" state={{ from: location.pathname }} replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // Special cases where we should skip the questionnaire check
@@ -118,13 +140,8 @@ export function ProtectedRoute({
     isSuccessPage || isCancelPage || isBillingPage || isPlusPage;
 
   // Check if they need to be redirected to the questionnaire
-  if (user && 
-      !hasCompletedQuestionnaire && 
-      !location.pathname.includes('/questionnaire') && 
-      requireAuth && 
-      !shouldSkipQuestionnaireCheck &&
-      requireQuestionnaire) {
-    return <Navigate to="/questionnaire" replace />;
+  if (requireQuestionnaire && hasCompletedQuestionnaire === false && !shouldSkipQuestionnaireCheck) {
+    return <Navigate to="/questionnaire" state={{ from: location }} replace />;
   }
 
   // Check if subscription is required and user is not subscribed

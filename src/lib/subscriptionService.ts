@@ -106,8 +106,6 @@ function createDiagnosticOverlay(): { log: (message: string) => void, close: () 
  * @returns Promise that resolves when the checkout process has started
  */
 export async function createCheckoutSession(email: string): Promise<void> {
-  console.log(`Starting checkout for ${email}`);
-  
   try {
     // Simple direct fetch to the API
     const response = await fetch('/api/create-checkout-session', {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   DollarSign, Clock, Users, ArrowRight, Brain, Trophy, 
@@ -11,6 +11,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import { Button } from './ui/button';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 
 interface ScholarshipCardProps {
   scholarship: ScoredScholarship;
@@ -35,7 +36,7 @@ export function ScholarshipCard({
   index,
   isAIGenerated = false
 }: ScholarshipCardProps) {
-  const { isSubscribed } = useAuth();
+  const { isSubscribed, user } = useAuth();
   const [savedScholarships, setSavedScholarships] = useState<string[]>([]);
   const navigate = useNavigate();
 
@@ -95,9 +96,30 @@ export function ScholarshipCard({
       return;
     }
     
-    // Proceed with saving the scholarship
-    // ...
+    // Call the original onSave function
+    await onSave(scholarship);
   };
+
+  useEffect(() => {
+    const fetchSavedScholarships = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('saved_scholarships')
+          .select('scholarship_id')
+          .eq('user_id', user.id);
+          
+        if (error) throw error;
+        
+        setSavedScholarships(data.map(item => item.scholarship_id) || []);
+      } catch (err) {
+        console.error('Error loading saved scholarships:', err);
+      }
+    };
+    
+    fetchSavedScholarships();
+  }, [user]);
 
   return (
     <motion.div

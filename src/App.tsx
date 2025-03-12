@@ -192,7 +192,7 @@ function AppContent() {
           </ProtectedRoute>
         } />
         
-        <Route path="/input-scholarships" element={
+        <Route path="/contribute" element={
           <ProtectedRoute requireAuth={false}>
             <InputScholarship />
           </ProtectedRoute>

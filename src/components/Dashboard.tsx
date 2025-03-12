@@ -1,4 +1,4 @@
-// src/components/Dashboard.tsx (with fixes)
+// src/components/Dashboard.tsx
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -11,7 +11,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { supabase } from '../lib/supabase';
 import { Button } from './ui/button';
-import { AIRecommendationSection } from './AIRecommendationSection';
 import { PremiumFeatureGate } from './ui/premiumFeatureGate';
 import { FeatureLimitIndicator } from './ui/FeatureLimitIndicator';
 import { useFeatureUsage, FeatureName } from '../lib/feature-usage';
@@ -24,8 +23,17 @@ interface DashboardProps {
 
 export function Dashboard({ userAnswers }: DashboardProps) {
   const navigate = useNavigate();
-  const { user } = useAuth() || { user: null }; // Add fallback
-  const { isSubscribed } = useSubscription() || { isSubscribed: false }; // Add fallback
+  const auth = useAuth();
+  const user = auth?.user || null;
+  
+  // Use the subscription context safely
+  let isSubscribed = false;
+  try {
+    const subscriptionContext = useSubscription();
+    isSubscribed = subscriptionContext?.isSubscribed || false;
+  } catch (err) {
+    console.error('Error using subscription context:', err);
+  }
   
   // Local states
   const [savedScholarships, setSavedScholarships] = useState<ScoredScholarship[]>([]);
@@ -34,22 +42,8 @@ export function Dashboard({ userAnswers }: DashboardProps) {
   const [profile, setProfile] = useState<UserAnswers | null>(null);
   const [error, setError] = useState<string | null>(null);
   
-  // Initialize with empty defaults if not available
-  const defaultUserAnswers: UserAnswers = {
-    education_level: '',
-    school: '',
-    major: '',
-    gpa: '',
-    is_pell_eligible: '',
-    location: ''
-  };
-  
-  // Safely use feature usage hook with error handling
-  let savedScholarshipsUsage = { 
-    hasReachedLimit: false, 
-    loading: false 
-  };
-  
+  // Safe usage of feature tracking
+  let savedScholarshipsUsage = { hasReachedLimit: false, loading: false };
   try {
     savedScholarshipsUsage = useFeatureUsage(FeatureName.SAVED_SCHOLARSHIPS);
   } catch (err) {
@@ -164,7 +158,7 @@ export function Dashboard({ userAnswers }: DashboardProps) {
     return Math.ceil((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
   };
   
-  // Determine if the profile is complete (safely check profile object)
+  // Determine if the profile is complete
   const isProfileComplete = Boolean(
     profile?.education_level &&
     profile?.school &&
@@ -191,7 +185,7 @@ export function Dashboard({ userAnswers }: DashboardProps) {
     }
   };
   
-  // If still loading, show a loading state
+  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -201,7 +195,7 @@ export function Dashboard({ userAnswers }: DashboardProps) {
     );
   }
   
-  // If there was an error, show error state
+  // Error state
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -224,10 +218,9 @@ export function Dashboard({ userAnswers }: DashboardProps) {
     );
   }
   
-  // Function to render the user welcome section
+  // Render the welcome section
   const renderWelcomeSection = () => {
-    // Safe access to user metadata
-    const userName = user?.user_metadata?.name || 'Student';
+    const userName = auth.getUserDisplayName();
     const userEmail = user?.email || '';
     
     return (
@@ -245,7 +238,6 @@ export function Dashboard({ userAnswers }: DashboardProps) {
       >
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            {/* Avatar/Icon */}
             <div className={`w-14 h-14 rounded-full ${
               isSubscribed 
                 ? 'bg-gradient-to-r from-indigo-500 to-purple-500' 
@@ -254,7 +246,6 @@ export function Dashboard({ userAnswers }: DashboardProps) {
               {userName.charAt(0).toUpperCase()}
             </div>
             
-            {/* User info */}
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-bold text-gray-900 dark:text-white">
@@ -273,7 +264,6 @@ export function Dashboard({ userAnswers }: DashboardProps) {
             </div>
           </div>
           
-          {/* Action buttons */}
           <div className="flex items-center gap-2">
             {!isSubscribed && (
               <Button
@@ -295,7 +285,6 @@ export function Dashboard({ userAnswers }: DashboardProps) {
           </div>
         </div>
         
-        {/* Profile completeness warning */}
         {!isProfileComplete && (
           <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 rounded-lg flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5" />
@@ -316,7 +305,6 @@ export function Dashboard({ userAnswers }: DashboardProps) {
           </div>
         )}
         
-        {/* Subscription upgrade prompt for free users with complete profile */}
         {!isSubscribed && isProfileComplete && (
           <div className="mt-6 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-100 dark:border-indigo-800/30 rounded-lg">
             <div className="flex items-center gap-3">
@@ -344,7 +332,7 @@ export function Dashboard({ userAnswers }: DashboardProps) {
     );
   };
   
-  // Profile stat tiles
+  // Render profile stat tiles
   const renderProfileTiles = () => {
     if (!profile) return null;
     
@@ -384,7 +372,6 @@ export function Dashboard({ userAnswers }: DashboardProps) {
     );
   };
   
-  // Main render
   return (
     <div className="min-h-screen py-12 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
       <div className="container mx-auto px-4">
@@ -503,17 +490,36 @@ export function Dashboard({ userAnswers }: DashboardProps) {
                 </motion.div>
               </ErrorBoundary>
 
-              {/* AI Recommendations Section (wrapped in ErrorBoundary) */}
+              {/* AI Recommendations Section */}
               <ErrorBoundary>
-                {profile && (
-                  <AIRecommendationSection 
-                    userAnswers={profile} 
-                    className="mb-6" 
-                  />
-                )}
+                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-md p-6 mb-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Sparkles className="w-5 h-5 text-purple-500" />
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                      AI Recommendations
+                    </h2>
+                  </div>
+                  
+                  <div className="text-center py-10 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+                    <Sparkles className="w-12 h-12 text-purple-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                      Generate AI Scholarship Recommendations
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                      Our AI can analyze your profile and suggest personalized scholarship opportunities that match your academic background.
+                    </p>
+                    <Button
+                      onClick={() => navigate('/results')}
+                      className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
+                    >
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Find Matching Scholarships
+                    </Button>
+                  </div>
+                </div>
               </ErrorBoundary>
               
-              {/* Deadlines Section (wrapped in ErrorBoundary) */}
+              {/* Deadlines Section */}
               <ErrorBoundary>
                 <motion.div
                   variants={itemVariants}
@@ -639,7 +645,7 @@ export function Dashboard({ userAnswers }: DashboardProps) {
                     </div>
                   </div>
                   
-                  {/* Plus-only essay assistance */}
+                  {/* Plus-only Essay Assistance */}
                   {isSubscribed ? (
                     <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl border border-indigo-100 dark:border-indigo-800/30 shadow-md">
                       <div className="flex items-start gap-3">
@@ -660,17 +666,33 @@ export function Dashboard({ userAnswers }: DashboardProps) {
                             onClick={() => navigate('/essay-help')}
                             className="text-sm bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:opacity-90"
                           >
+                            <Sparkles className="w-4 h-4 mr-2" />
                             Try Essay Assistant
                           </Button>
                         </div>
                       </div>
                     </div>
                   ) : (
-                    <PremiumFeatureGate
-                      feature="AI Essay Assistance"
-                      description="Get AI-powered help with your scholarship essays and personal statements."
-                      icon="sparkles"
-                    />
+                    <div className="p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-md">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-indigo-100 dark:bg-indigo-800/50 rounded-full">
+                          <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-gray-900 dark:text-white">Upgrade for AI Essay Assistance</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                            Upgrade to Plus to unlock AI-powered essay assistance for your scholarship applications.
+                          </p>
+                          <Button
+                            onClick={() => navigate('/plus')}
+                            className="text-sm bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:opacity-90"
+                          >
+                            <Sparkles className="w-4 h-4 mr-2" />
+                            Upgrade Now
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </motion.div>
               </ErrorBoundary>

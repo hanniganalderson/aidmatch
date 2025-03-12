@@ -6,7 +6,7 @@ import { LandingPage } from './components/LandingPage';
 import { Questionnaire } from './components/Questionnaire';
 import { Results } from './components/Results';
 // Import the simplified dashboard instead
-import { MinimalDashboard } from './components/MinimalDashboard';
+import { Dashboard } from './components/Dashboard';
 import { SignIn } from './components/SignIn';
 import { SignUp } from './components/SignUp';
 import { About } from './components/About';
@@ -198,7 +198,7 @@ function AppContent() {
         <Route path="/dashboard" element={
           <ErrorBoundary>
             <ProtectedRoute requireAuth={false}>
-              <MinimalDashboard userAnswers={answers} />
+              <Dashboard userAnswers={answers} />
             </ProtectedRoute>
           </ErrorBoundary>
         } />

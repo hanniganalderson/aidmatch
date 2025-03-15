@@ -188,7 +188,6 @@ export const FIELDS_OF_STUDY = [
     "Teaching English as a Second Language (TESOL)",
   
     // Law & Legal
-    "Conflict Resolution",
     "Criminal Justice",
     "Criminology",
     "Forensic Science",
@@ -232,7 +231,6 @@ export const FIELDS_OF_STUDY = [
   
     // Military & Defense
     "Aeronautics",
-    "Criminal Justice",
     "Cybersecurity",
     "Defense Studies",
     "Military Science",

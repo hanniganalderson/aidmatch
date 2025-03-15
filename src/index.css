@@ -294,3 +294,25 @@
 .theme-plus .feature-card:hover {
   @apply border-purple-500/30;
 }
+
+/* Add these animation styles to your global CSS */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes gradient-y {
+  0% { background-position: 50% 0%; }
+  50% { background-position: 50% 100%; }
+  100% { background-position: 50% 0%; }
+}
+
+.animate-gradient-y {
+  background-size: 100% 200%;
+  animation: gradient-y 15s ease infinite;
+}

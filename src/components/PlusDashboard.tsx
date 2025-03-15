@@ -11,11 +11,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
-import { Progress } from './ui/progress';
 import { useSavedScholarships } from '../hooks/useScholarshipMatching';
 import { supabase } from '../lib/supabase';
 import type { ScoredScholarship } from '../types';
+import { EssayAssistant } from './EssayAssistant';
 
+// Rename from PremiumDashboard to PlusDashboard to match import in Dashboard.tsx
 export function PlusDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -63,13 +64,13 @@ export function PlusDashboard() {
           .limit(5);
           
         if (error) throw error;
-        
         // Transform to ScoredScholarship type
         const scholarships: ScoredScholarship[] = data.map(item => ({
           id: item.id,
           name: item.name,
           amount: item.amount,
           deadline: item.deadline,
+          provider: item.provider, // Added missing provider field
           description: item.description,
           requirements: item.requirements,
           url: item.url,
@@ -301,220 +302,7 @@ export function PlusDashboard() {
                       </div>
                     </div>
                   ))}
-                  
-                  <Button
-                    variant="link"
-                    onClick={() => setActiveTab('deadlines')}
-                    className="text-indigo-600 dark:text-indigo-400 text-sm w-full justify-center mt-2"
-                  >
-                    View All Deadlines
-                    <ArrowRight className="w-3 h-3 ml-1" />
-                  </Button>
                 </div>
-              </div>
-            </motion.div>
-          </motion.div>
-          
-          {/* Right Column - Main Content */}
-          <motion.div 
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="lg:col-span-3 space-y-6"
-          >
-            {/* AI Essay Assistant */}
-            <motion.div 
-              variants={itemVariants}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-xl overflow-hidden border border-indigo-100 dark:border-indigo-800/30"
-            >
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
-                    <PenTool className="w-5 h-5 mr-2 text-indigo-600 dark:text-indigo-400" />
-                    AI Essay Assistant
-                  </h2>
-                  <Badge className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
-                    Plus Feature
-                  </Badge>
-                </div>
-                
-                <div className="mb-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Engineering Scholarship Essay
-                    </span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {essayProgress}% Complete
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                    <div 
-                      className="bg-gradient-to-r from-indigo-600 to-purple-600 h-2.5 rounded-full" 
-                      style={{ width: `${essayProgress}%` }}
-                    ></div>
-                  </div>
-                </div>
-                
-                <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-4 mb-4 border border-indigo-100 dark:border-indigo-800/30">
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-800 flex items-center justify-center flex-shrink-0">
-                      <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-gray-900 dark:text-white text-sm mb-1">
-                        AI Suggestion
-                      </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
-                        Consider strengthening your introduction with a more compelling personal story that connects to your engineering aspirations.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                
-                <Button
-                  onClick={() => navigate('/tools/essay-assistant')}
-                  className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md hover:shadow-lg transition-all duration-200"
-                >
-                  Continue Writing
-                </Button>
-              </div>
-            </motion.div>
-            
-            {/* Financial Aid Optimizer */}
-            <motion.div 
-              variants={itemVariants}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-xl overflow-hidden border border-indigo-100 dark:border-indigo-800/30"
-            >
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
-                    <DollarSign className="w-5 h-5 mr-2 text-green-600 dark:text-green-400" />
-                    Financial Aid Insights
-                  </h2>
-                  <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white">
-                    AI Powered
-                  </Badge>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-100 dark:border-green-800/30">
-                    <h3 className="font-medium text-gray-900 dark:text-white text-sm mb-2">
-                      Potential Aid
-                    </h3>
-                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                      $78,500
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Based on your profile and matches
-                    </p>
-                  </div>
-                  
-                  <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-100 dark:border-purple-800/30">
-                    <h3 className="font-medium text-gray-900 dark:text-white text-sm mb-2">
-                      Application Success Rate
-                    </h3>
-                    <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                      72%
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Higher than average for your profile
-                    </p>
-                  </div>
-                  
-                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-100 dark:border-blue-800/30">
-                    <h3 className="font-medium text-gray-900 dark:text-white text-sm mb-2">
-                      Optimized FAFSA
-                    </h3>
-                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                      +$12,300
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Additional aid with our optimization
-                    </p>
-                  </div>
-                </div>
-                
-                <Button
-                  onClick={() => navigate('/tools/financial-optimizer')}
-                  className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md hover:shadow-lg transition-all duration-200"
-                >
-                  Optimize Your Financial Aid
-                </Button>
-              </div>
-            </motion.div>
-            
-            {/* Top Scholarships */}
-            <motion.div 
-              variants={itemVariants}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-xl overflow-hidden border border-indigo-100 dark:border-indigo-800/30"
-            >
-              <div className="p-6">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                  <Award className="w-5 h-5 mr-2 text-amber-500 dark:text-amber-400" />
-                  Top Scholarship Matches
-                </h2>
-                
-                {loading ? (
-                  <div className="flex justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-500 border-t-transparent"></div>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {topScholarships.map((scholarship, index) => (
-                      <div key={scholarship.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-medium text-gray-900 dark:text-white">{scholarship.name}</h3>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                              ${scholarship.amount?.toLocaleString() || 'Varies'} • Due: {new Date(scholarship.deadline || '').toLocaleDateString()}
-                            </p>
-                          </div>
-                          <Badge className="bg-gradient-to-r from-amber-400 to-amber-500 text-white">
-                            {scholarship.match_score}% Match
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 line-clamp-2">
-                          {scholarship.description}
-                        </p>
-                        <div className="flex justify-between items-center mt-4">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => navigate(`/scholarship/${scholarship.id}`)}
-                            className="text-xs"
-                          >
-                            View Details
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleSave(scholarship)}
-                            disabled={isSaving}
-                            className={`text-xs ${
-                              savedScholarships.includes(scholarship.id)
-                                ? 'text-indigo-600 dark:text-indigo-400'
-                                : 'text-gray-600 dark:text-gray-400'
-                            }`}
-                          >
-                            <Bookmark className="w-4 h-4 mr-1" />
-                            {savedScholarships.includes(scholarship.id) ? 'Saved' : 'Save'}
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                    
-                    <div className="text-center mt-4">
-                      <Button
-                        variant="link"
-                        onClick={() => navigate('/questionnaire')}
-                        className="text-indigo-600 dark:text-indigo-400"
-                      >
-                        Find More Scholarships
-                        <ArrowRight className="w-4 h-4 ml-1" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
               </div>
             </motion.div>
           </motion.div>
@@ -522,4 +310,4 @@ export function PlusDashboard() {
       </div>
     </div>
   );
-} 
+}

@@ -1,4 +1,5 @@
 // src/App.tsx (updated with Simplified Dashboard)
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useState, useEffect } from 'react';
 import { Layout } from './components/Layout';
@@ -13,8 +14,9 @@ import { About } from './components/About';
 import { Settings } from './components/Settings';
 import { SavedScholarships } from './components/SavedScholarships';
 import { InputScholarship } from './components/InputScholarship';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext'; // Fix: Added useAuth import
 import { SubscriptionProvider } from './contexts/SubscriptionContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { supabase } from './lib/supabase';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
@@ -30,7 +32,10 @@ import { EssayAssistant } from './pages/tools/EssayAssistant';
 import { FinancialOptimizer } from './pages/tools/FinancialOptimizer';
 import { DeadlineTracker } from './pages/tools/DeadlineTracker';
 import { AutoFillApplications } from './pages/tools/AutoFillApplications';
-import { ToastProvider } from './components/ui/toast';
+import { Toaster } from './components/ui/toaster';
+import { EssayHelper } from './pages/EssayHelper';
+import AdminDashboard from './components/AdminDashboard';
+import { AdminRoute } from './components/AdminRoute';
 
 // Import animation styles
 import './styles/animations.css';
@@ -150,90 +155,54 @@ function AppContent() {
   return (
     <Layout>
       <Routes>
-        {/* Public routes */}
         <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<SignIn />} />
+        <Route path="/questionnaire" element={<Questionnaire />} />
+        <Route path="/results" element={<Results />} />
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        } />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/about" element={<About />} />
-        <Route path="/plus" element={<Plus />} />
-        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-        <Route path="/terms-of-service" element={<TermsOfService />} />
-        
-        {/* Subscription routes - with skipQuestionnaireCheck */}
-        <Route path="/success" element={
-          <ProtectedRoute requireAuth={true} skipQuestionnaireCheck={true}>
-            <SubscriptionSuccess />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/cancel" element={
-          <ProtectedRoute requireAuth={false} skipQuestionnaireCheck={true}>
-            <SubscriptionCancel />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/account/billing" element={
-          <ProtectedRoute requireAuth={true} skipQuestionnaireCheck={true}>
-            <BillingPage />
-          </ProtectedRoute>
-        } />
-        
-        {/* Questionnaire can be accessed with or without login */}
-        <Route path="/questionnaire" element={
-          <Questionnaire 
-            onSubmit={handleSubmitAnswers} 
-            initialValues={answers} 
-          />
-        } />
-        
-        {/* Routes that can be viewed without login but have enhanced functionality when logged in */}
         <Route path="/settings" element={
-          <ProtectedRoute requireAuth={false}>
+          <ProtectedRoute>
             <Settings />
           </ProtectedRoute>
         } />
-        
+        <Route path="/saved" element={
+          <ProtectedRoute>
+            <SavedScholarships />
+          </ProtectedRoute>
+        } />
+        <Route path="/input-scholarship" element={
+          <ProtectedRoute>
+            <InputScholarship />
+          </ProtectedRoute>
+        } />
         <Route path="/contribute" element={
-          <ProtectedRoute requireAuth={false}>
+          <ProtectedRoute>
             <InputScholarship />
           </ProtectedRoute>
         } />
         
-        {/* Use simplified dashboard instead */}
-        <Route path="/dashboard" element={
-          <ProtectedRoute requireAuth={true} requireSubscription={true}>
-            <Dashboard />
+        {/* Premium features */}
+        <Route path="/tools/essay-assistant" element={
+          <ProtectedRoute requiresSubscription>
+            <EssayAssistant />
           </ProtectedRoute>
         } />
         
-        {/* Routes that require authentication */}
-        <Route path="/saved-scholarships" element={
-          <ProtectedRoute requireAuth={true}>
-            <SavedScholarships />
-          </ProtectedRoute>
-        } />
-        
-        {/* Results can be viewed without login */}
-        <Route path="/results" element={
-          <Results 
-            answers={answers} 
-          />
-        } />
-        
-        {/* Add this route to your router */}
-        <Route path="/subscription-success" element={<SubscriptionSuccessPage />} />
-        
-        {/* New routes */}
-        <Route path="/tools/essay-assistant" element={<EssayAssistant />} />
-        <Route path="/tools/financial-optimizer" element={<FinancialOptimizer />} />
-        <Route path="/tools/deadline-tracker" element={<DeadlineTracker />} />
-        <Route path="/tools/auto-fill" element={<AutoFillApplications />} />
-        
-        {/* Add a route for free users */}
-        <Route path="/scholarships" element={
-          <ProtectedRoute requireAuth={true}>
-            <Results answers={answers} />
+        {/* Other routes */}
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsOfService />} />
+        <Route path="/plus" element={<Plus />} />
+        <Route path="/subscription/success" element={<SubscriptionSuccessPage />} />
+        <Route path="/subscription/cancel" element={<SubscriptionCancel />} />
+        <Route path="/account/billing" element={
+          <ProtectedRoute>
+            <BillingPage />
           </ProtectedRoute>
         } />
       </Routes>
@@ -243,14 +212,16 @@ function AppContent() {
 
 function App() {
   return (
+    <ThemeProvider>
       <AuthProvider>
         <SubscriptionProvider>
           <Router>
             <AppContent />
+            <Toaster />
           </Router>
         </SubscriptionProvider>
-        <ToastProvider />
       </AuthProvider>
+    </ThemeProvider>
   );
 }
 

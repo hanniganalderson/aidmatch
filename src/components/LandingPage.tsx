@@ -3,10 +3,11 @@ import { Target, Sparkles, ArrowRight, Check, DollarSign, BookOpen, Clock, Award
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { ScholarshipCarousel } from './ScholarshipCarousel';
+import { ReadyToMatch } from './ReadyToMatch'; // Import the ReadyToMatch component
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 
-export function LandingPage() {
+export function LandingPage(): JSX.Element {
   const navigate = useNavigate();
 
   // Animation variants
@@ -367,45 +368,8 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-24 relative">
-        <div className="container mx-auto px-6">
-          <div className="max-w-4xl mx-auto">
-            <motion.div
-              className="text-center py-12 px-6 rounded-2xl border-green-100 dark:border-green-900/20 bg-white dark:bg-gray-800 shadow-xl relative overflow-hidden"
-              initial={{ scale: 0.95, opacity: 0 }}
-              whileInView={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.5 }}
-              viewport={{ once: true }}
-            >
-              {/* Add decorative elements */}
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-emerald-500"></div>
-              <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-gradient-to-br from-green-300/20 to-emerald-300/20"></div>
-              <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-gradient-to-tr from-green-300/20 to-emerald-300/20"></div>
-              
-              <h2 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white relative z-10">Ready to Match?</h2>
-              <p className="text-gray-700 dark:text-gray-300 max-w-2xl mx-auto mb-8 relative z-10">
-                Complete our quick questionnaire and get scholarships tailored to your profile.
-              </p>
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <Button
-                  variant="gradient"
-                  size="lg"
-                  onClick={() => navigate('/questionnaire')}
-                  icon={<ArrowRight className="w-5 h-5" />}
-                  iconPosition="right"
-                  className="shadow-lg hover:shadow-xl bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white relative z-10"
-                >
-                  Start Matching Now
-                </Button>
-              </motion.div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
+      {/* Replace the simple CTA Section with the ReadyToMatch component */}
+      <ReadyToMatch />
     </div>
   );
 }

@@ -1,16 +1,17 @@
 // src/components/AIRecommendationSection.tsx
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Sparkles, AlertCircle, Crown, RefreshCw, Award, Zap, ArrowRight } from 'lucide-react';
 import { PremiumFeatureGate } from './ui/premiumFeatureGate';
 import { FeatureLimitIndicator } from './ui/FeatureLimitIndicator';
-import { useFeatureUsage, FeatureName } from '../lib/feature-usage';
+import { useFeatureUsage } from '../hooks/useFeatureUsage';
 import { getAIScholarshipRecommendations } from '../lib/AIScholarshipService';
 import { Button } from './ui/button';
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import type { ScoredScholarship, UserAnswers } from '../types';
+import { FeatureName } from '../lib/feature-management';
 
 interface ScholarshipCardProps {
   scholarship: ScoredScholarship;
@@ -39,12 +40,11 @@ export function AIRecommendationSection({
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isSubscribed } = useSubscription();
-  const [aiScholarships, setAiScholarships] = useState<ScoredScholarship[]>([]);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [scholarships, setScholarships] = useState<ScoredScholarship[]>([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState(false);
+  const [generated, setGenerated] = useState(false);
   
-  // Feature usage tracking
   const { 
     incrementUsage, 
     hasReachedLimit, 
@@ -61,11 +61,11 @@ export function AIRecommendationSection({
   // Generate recommendations
   const generateRecommendations = async () => {
     // Check if user can use feature (if not subscribed)
-    if (!isSubscribed && !canUseFeature()) {
+    if (!isSubscribed && !canUseFeature) {
       return;
     }
     
-    setIsGenerating(true);
+    setLoading(true);
     setError(null);
     
     try {
@@ -74,31 +74,32 @@ export function AIRecommendationSection({
         await incrementUsage();
       }
       
-      // Get AI recommendations
+      // Get AI recommendations with subscription status
       const recommendations = await getAIScholarshipRecommendations(
         userAnswers,
-        isSubscribed ? maxResults * 2 : maxResults // More results for subscribers
+        isSubscribed ? maxResults * 2 : maxResults, // More results for subscribers
+        isSubscribed // Pass subscription status
       );
       
       if (recommendations.length === 0) {
         setError('No recommendations found. Please try again or update your profile.');
       } else {
-        setAiScholarships(recommendations);
+        setScholarships(recommendations);
       }
     } catch (err) {
       console.error('Error generating AI recommendations:', err);
       setError('An error occurred while generating recommendations.');
     } finally {
-      setIsGenerating(false);
+      setLoading(false);
     }
   };
   
   // Get initial recommendations on load if we have data
   useEffect(() => {
     // Only auto-generate if we have data and no recommendations yet
-    if (hasRequiredData && aiScholarships.length === 0 && !error) {
+    if (hasRequiredData && scholarships.length === 0 && !error) {
       // Don't auto-generate for free users who are out of uses
-      if (isSubscribed || canUseFeature()) {
+      if (isSubscribed || canUseFeature) {
         generateRecommendations();
       }
     }
@@ -248,10 +249,10 @@ export function AIRecommendationSection({
                       onClick={generateRecommendations}
                       variant="link"
                       className="text-red-600 dark:text-red-400 p-0 h-auto mt-1"
-                      disabled={isGenerating}
+                      disabled={loading}
                     >
-                      {isGenerating ? 'Generating...' : 'Try Again'}
-                      {!isGenerating && <RefreshCw className="w-3.5 h-3.5 ml-1.5" />}
+                      {loading ? 'Generating...' : 'Try Again'}
+                      {!loading && <RefreshCw className="w-3.5 h-3.5 ml-1.5" />}
                     </Button>
                   </div>
                 </div>
@@ -259,7 +260,7 @@ export function AIRecommendationSection({
             )}
             
             {/* Loading state while generating */}
-            {isGenerating ? (
+            {loading ? (
               <motion.div
                 variants={itemVariants}
                 className="p-12 flex flex-col items-center justify-center"
@@ -275,10 +276,10 @@ export function AIRecommendationSection({
             ) : (
               <>
                 {/* Scholarship results */}
-                {aiScholarships.length > 0 ? (
+                {scholarships.length > 0 ? (
                   <motion.div variants={itemVariants}>
-                    <div className={`space-y-4 ${expanded ? '' : 'max-h-[600px] overflow-hidden'}`}>
-                      {aiScholarships.slice(0, expanded ? undefined : maxResults).map((scholarship, index) => (
+                    <div className={`space-y-4 ${generated ? '' : 'max-h-[600px] overflow-hidden'}`}>
+                      {scholarships.slice(0, generated ? undefined : maxResults).map((scholarship, index) => (
                         <ScholarshipCard
                           key={scholarship.id.toString()}
                           scholarship={scholarship}
@@ -288,18 +289,18 @@ export function AIRecommendationSection({
                     
                     {/* Show more/less and regenerate buttons */}
                     <div className="mt-6 flex flex-col sm:flex-row justify-between gap-4">
-                      {aiScholarships.length > maxResults && (
+                      {scholarships.length > maxResults && (
                         <Button
-                          onClick={() => setExpanded(!expanded)}
+                          onClick={() => setGenerated(!generated)}
                           variant="outline"
                         >
-                          {expanded ? 'Show Less' : `Show ${aiScholarships.length - maxResults} More`}
+                          {generated ? 'Show Less' : `Show ${scholarships.length - maxResults} More`}
                         </Button>
                       )}
                       
                       <Button
                         onClick={generateRecommendations}
-                        disabled={isGenerating}
+                        disabled={loading}
                         className={isSubscribed ? 
                           "bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:opacity-90" : 
                           ""}

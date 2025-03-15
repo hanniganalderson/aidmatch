@@ -118,6 +118,16 @@ export async function getScholarshipExplanation(
       ? scholarship.education_level.join(', ') 
       : (scholarship.education_level || 'Any');
 
+    // Fix the scholarship.amount null check
+    const amountText = scholarship.amount != null 
+      ? `$${scholarship.amount.toLocaleString()}` 
+      : 'Amount not specified';
+
+    // Fix other null checks similarly
+    const formattedAmount = scholarship.amount != null 
+      ? `$${scholarship.amount.toLocaleString()}` 
+      : 'Amount not specified';
+
     // Create prompt with detailed information
     const messages: OpenAIMessage[] = [
       {
@@ -134,7 +144,7 @@ export async function getScholarshipExplanation(
           Scholarship Details:
           - Name: ${scholarship.name}
           - Provider: ${scholarship.provider}
-          - Amount: ${scholarship.amount.toLocaleString()}
+          - Amount: ${amountText}
           - GPA Requirement: ${scholarship.gpa_requirement || 'None specified'}
           - Major Field: ${scholarship.major || 'Open to all majors'}
           - Education Level: ${scholarshipEducationLevels}
@@ -198,6 +208,6 @@ export async function getScholarshipExplanation(
   } catch (error) {
     console.error('Error getting scholarship explanation:', error);
     // Provide a fallback explanation instead of failing
-    return `This ${scholarship.name} scholarship looks like a strong match for your profile! The ${scholarship.amount.toLocaleString()} award aligns well with your academic background in ${userProfile.major} and your current education level (${userProfile.education_level}). With your GPA of ${userProfile.gpa}, you meet or exceed their requirements, and your location in ${userProfile.location} may give you an additional advantage.`;
+    return `This ${scholarship.name} scholarship looks like a strong match for your profile! The ${formattedAmount} award aligns well with your academic background in ${userProfile.major} and your current education level (${userProfile.education_level}). With your GPA of ${userProfile.gpa}, you meet or exceed their requirements, and your location in ${userProfile.location} may give you an additional advantage.`;
   }
 }

@@ -1,31 +1,25 @@
-import * as React from "react";
+import React from 'react';
+import { cn } from '../../lib/utils';
 
-interface SwitchProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  onCheckedChange?: (checked: boolean) => void;
-}
+export interface SwitchProps extends React.InputHTMLAttributes<HTMLInputElement> {}
 
 export const Switch = React.forwardRef<HTMLInputElement, SwitchProps>(
-  ({ className, onCheckedChange, checked, ...props }, ref) => {
-    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      if (onCheckedChange) {
-        onCheckedChange(event.target.checked);
-      }
-    };
-
-    return (
-      <label className={`relative inline-flex items-center cursor-pointer ${className || ''}`}>
-        <input
-          type="checkbox"
-          className="sr-only peer"
-          checked={checked}
-          onChange={handleChange}
-          ref={ref}
-          {...props}
-        />
-        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
-      </label>
-    );
-  }
+  ({ className, ...props }, ref) => (
+    <label className="relative inline-flex items-center cursor-pointer">
+      <input
+        type="checkbox"
+        className="sr-only peer"
+        ref={ref}
+        {...props}
+      />
+      <div
+        className={cn(
+          "w-11 h-6 bg-gray-300 dark:bg-gray-700 rounded-full peer peer-focus:ring-2 peer-focus:ring-primary-500/30 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600",
+          className
+        )}
+      ></div>
+    </label>
+  )
 );
 
 Switch.displayName = "Switch"; 

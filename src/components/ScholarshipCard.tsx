@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   DollarSign, Clock, Users, ArrowRight, Brain, Trophy, 
   X, Check, Sparkles, Zap, Bookmark, FileText, AlertCircle,
-  ChevronUp, ChevronDown // Added missing imports here
+  ChevronUp, ChevronDown, RefreshCw // Added missing imports here
 } from 'lucide-react';
 import { Badge } from './ui/badge';
 import type { ScoredScholarship } from '../types';
@@ -12,6 +12,8 @@ import { Button } from './ui/button';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { showToast } from '../lib/toast';
+import { validateUrl, safeOpenUrl } from '../lib/url-utils';
+import { formatCurrency } from '../lib/format-utils';
 
 interface ScholarshipCardProps {
   scholarship: ScoredScholarship;
@@ -71,11 +73,12 @@ export function ScholarshipCard({
   const daysRemaining = getDaysRemaining(scholarship.deadline);
   
   // Function to determine if there's a website link
-  const hasWebsite = scholarship.link && (
-    scholarship.link.startsWith('http') || 
-    scholarship.link.startsWith('www') ||
-    isAIGenerated
-  );
+  const hasWebsite = scholarship.application_link || (
+    scholarship.link && (
+      scholarship.link.startsWith('http') || 
+      scholarship.link.startsWith('www')
+    )
+  ) || isAIGenerated;
   
   const handleSave = async () => {
     if (!user) {
@@ -102,6 +105,19 @@ export function ScholarshipCard({
     
     // Call the original onSave function
     await onSave(scholarship);
+  };
+
+  const handleLearnMore = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!scholarship.link) {
+      showToast.error('No link available for this scholarship');
+      return;
+    }
+    
+    if (!safeOpenUrl(scholarship.link)) {
+      showToast.error('Invalid scholarship link. Please try searching for it directly.');
+    }
   };
 
   useEffect(() => {
@@ -174,24 +190,24 @@ export function ScholarshipCard({
             </p>
 
             <div className="flex flex-wrap gap-4 mb-4">
-              <div className="flex items-center text-sm text-primary-600 dark:text-primary-400">
-                <DollarSign className="w-4 h-4 mr-1" />
-                <span>${scholarship.amount.toLocaleString()}</span>
-              </div>
+              {scholarship.amount != null && (
+                <div className="flex items-center text-sm">
+                  <DollarSign className="w-4 h-4 mr-1 text-green-500" />
+                  <span>{formatCurrency(scholarship.amount)}</span>
+                </div>
+              )}
               
               {scholarship.deadline && (
-                <div className={`flex items-center text-sm ${
-                  daysRemaining !== null && daysRemaining <= 14 
-                    ? 'text-error-600 dark:text-error-400' 
-                    : 'text-accent-600 dark:text-accent-400'
-                }`}>
-                  <Clock className="w-4 h-4 mr-1" />
-                  <span>{formatDate(scholarship.deadline)}</span>
-                  {daysRemaining !== null && daysRemaining <= 14 && (
-                    <span className="ml-1 font-medium">
-                      ({daysRemaining} days left)
-                    </span>
-                  )}
+                <div className="flex items-center text-sm">
+                  <Clock className="w-4 h-4 mr-1 text-orange-500" />
+                  <span>
+                    {formatDate(scholarship.deadline)}
+                    {daysRemaining !== null && daysRemaining > 0 && (
+                      <span className="ml-1 text-xs font-medium text-orange-600 dark:text-orange-400">
+                        ({daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} left)
+                      </span>
+                    )}
+                  </span>
                 </div>
               )}
               
@@ -224,33 +240,53 @@ export function ScholarshipCard({
                 </Badge>
               ))}
               {scholarship.is_recurring && (
-                <Badge variant="success" className="text-xs">
-                  Recurring {scholarship.recurring_period || ''}
+                <div className="flex items-center text-sm">
+                  <RefreshCw className="w-4 h-4 mr-1 text-blue-500" />
+                  <span>
+                    {scholarship.recurring_period ? 
+                      `Recurring ${scholarship.recurring_period}` : 
+                      'Recurring scholarship'}
+                  </span>
+                </div>
+              )}
+              {scholarship?.hasOwnProperty('is_local') && scholarship.is_local && (
+                <Badge variant="outline" className="ml-2">Local</Badge>
+              )}
+              {scholarship?.hasOwnProperty('national') && scholarship.national && (
+                <Badge variant="outline" className="ml-2">National</Badge>
+              )}
+              {scholarship.is_need_based && (
+                <Badge variant="outline" className="text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800">
+                  Need-based
                 </Badge>
               )}
-              {scholarship.is_local && (
-                <Badge variant="warning" className="text-xs">
-                  Local
-                </Badge>
-              )}
-              {scholarship.national && (
-                <Badge variant="secondary" className="text-xs">
-                  National
-                </Badge>
-              )}
-              {scholarship.is_need_based !== undefined && (
-                <Badge variant={scholarship.is_need_based ? "default" : "secondary"} className="text-xs">
-                  {scholarship.is_need_based ? 'Need-Based' : 'Merit-Based'}
+              {scholarship.is_merit_based && (
+                <Badge variant="outline" className="text-xs bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800">
+                  Merit-based
                 </Badge>
               )}
             </div>
           </div>
 
           <div className="flex flex-col items-end gap-2">
-            <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">
-              {scholarship.score}%
-            </div>
+            {scholarship.score && !isAIGenerated && (
+              <div className="flex items-center text-sm">
+                <Brain className="w-4 h-4 mr-1 text-purple-500" />
+                <span>
+                  {scholarship.score}% match
+                </span>
+              </div>
+            )}
             <div className="text-sm text-gray-600 dark:text-gray-400">Match Score</div>
+            {scholarship.match_score && (
+              <div className="flex items-center gap-1.5 text-sm">
+                <div className="bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 rounded-full">
+                  <span className="text-amber-700 dark:text-amber-500 font-medium">
+                    {scholarship.match_score}% Match
+                  </span>
+                </div>
+              </div>
+            )}
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -306,19 +342,15 @@ export function ScholarshipCard({
           )}
 
           {hasWebsite ? (
-            <a
-              href={scholarship.link || '#'}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg hover:opacity-90 transition-opacity text-white ${
-                isAIGenerated 
-                  ? 'bg-gradient-to-r from-purple-500 to-indigo-500' 
-                  : 'bg-gradient-green'
-              }`}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleLearnMore}
+              className="text-xs"
+              disabled={!validateUrl(scholarship.link)}
             >
-              <span>{isAIGenerated ? "Learn More" : "Apply Now"}</span>
-              <ArrowRight className="w-4 h-4" />
-            </a>
+              Learn More
+            </Button>
           ) : (
             <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-sm">
               <span>No Link Available</span>

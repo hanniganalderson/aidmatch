@@ -10,6 +10,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { ResultsFilters } from './ResultsFilters';
 import { ScholarshipCard } from './ScholarshipCard';
 import { Button } from './ui/button';
+import { AIRecommendationSection } from './AIRecommendationSection';
+import { showToast } from '../lib/showToast';
+import { supabase } from '../lib/supabase';
 
 interface ResultsProps {
   answers: UserAnswers;
@@ -66,7 +69,7 @@ export function Results({ answers }: ResultsProps) {
   } = useScholarshipMatching(answers);
 
   const {
-    isSaved,
+    isSaved: savedScholarshipsIsSaved,
     toggleSave,
     isSaving
   } = useSavedScholarships(user?.id);
@@ -169,8 +172,8 @@ export function Results({ answers }: ResultsProps) {
     }
     
     try {
-      const explanation = await getExplanation(scholarship);
-      if (explanation) setExpandedScholarshipId(scholarship.id);
+      await getExplanation(scholarship);
+      if (explanationLoading[scholarship.id]) setExpandedScholarshipId(scholarship.id);
     } catch (err) {
       console.error('Error in handleExplain:', err);
     }
@@ -178,6 +181,69 @@ export function Results({ answers }: ResultsProps) {
 
   // Intersection observer for fade-in
   const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.1 });
+
+  // Fix the toggleSave function call
+  const handleSave = async (scholarship: ScoredScholarship) => {
+    // Check if user is logged in
+    if (!user) {
+      navigate('/signin');
+      return;
+    }
+    
+    try {
+      // Toggle the saved status
+      const isSavedAlready = savedScholarshipsIsSaved(scholarship.id);
+      await toggleSave(user.id, scholarship.id, isSavedAlready);
+      
+      // Update local state
+      setSavedScholarshipIds(prev => {
+        if (isSavedAlready) {
+          return prev.filter(id => id !== scholarship.id);
+        } else {
+          return [...prev, scholarship.id];
+        }
+      });
+      
+      // Show success message
+      showToast.success(isSavedAlready 
+        ? 'Scholarship removed from saved items' 
+        : 'Scholarship saved successfully');
+        
+    } catch (error) {
+      console.error('Error saving scholarship:', error);
+      showToast.error('Failed to save scholarship');
+    }
+  };
+
+  // Add the savedScholarshipIds state
+  const [savedScholarshipIds, setSavedScholarshipIds] = useState<string[]>([]);
+
+  // Load saved scholarships on mount
+  useEffect(() => {
+    const loadSavedScholarships = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('saved_scholarships')
+          .select('scholarship_id')
+          .eq('user_id', user.id);
+          
+        if (error) throw error;
+        
+        // Set the saved scholarship IDs
+        setSavedScholarshipIds(data.map(item => item.scholarship_id) || []);
+      } catch (err) {
+        console.error('Error loading saved scholarships:', err);
+        showToast.error('Failed to load saved scholarships');
+      }
+    };
+    
+    loadSavedScholarships();
+  }, [user]);
+
+  // Use the isSaved function
+  const isSaved = (scholarshipId: string) => savedScholarshipIds.includes(scholarshipId);
 
   return (
     <div className="min-h-screen py-12 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-900">
@@ -244,28 +310,6 @@ export function Results({ answers }: ResultsProps) {
               AI Recommendations
             </span>
           </button>
-          
-          {aiScholarships.length === 0 && !isGeneratingAI && (
-            <div className="ml-auto">
-              <Button
-                onClick={generateAIRecommendations}
-                className="flex items-center gap-2"
-                disabled={isGeneratingAI}
-              >
-                {isGeneratingAI ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4" />
-                    Generate AI Recommendations
-                  </>
-                )}
-              </Button>
-            </div>
-          )}
         </div>
 
         {/* Main results area */}
@@ -311,10 +355,8 @@ export function Results({ answers }: ResultsProps) {
                     key={scholarship.id}
                     scholarship={scholarship}
                     isSaved={isSaved(scholarship.id)}
-                    onSave={async (sch) => {
-                      await toggleSave(sch);
-                    }}
-                    onExplain={() => handleExplain(scholarship)}
+                    onSave={handleSave}
+                    onExplain={handleExplain}
                     isExplaining={!!explanationLoading[scholarship.id]}
                     isExpanded={expandedScholarshipId === scholarship.id}
                     isSaving={!!isSaving[scholarship.id]}
@@ -388,58 +430,30 @@ export function Results({ answers }: ResultsProps) {
                 </Button>
               </div>
             ) : (
-              <>
-                <div className="mb-6 p-4 bg-primary-50/50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-900/30 rounded-lg flex items-start gap-3">
-                  <Sparkles className="w-5 h-5 text-primary-500 mt-1 flex-shrink-0" />
-                  <div>
-                    <p className="text-gray-700 dark:text-gray-200 text-sm">
-                      <span className="font-medium">AI-Generated Recommendations:</span> These scholarship suggestions are generated by AI based on your profile. While they represent potential opportunities, they may require additional verification. Each recommendation is personalized to your background in {answers.major} with a GPA of {answers.gpa}.
-                    </p>
-                  </div>
-                </div>
+              <div className="space-y-6">
+                <AIRecommendationSection 
+                  userAnswers={answers}
+                  className="mb-6"
+                />
                 
-                <div className="space-y-6">
-                  {filteredAiScholarships.slice(
-                    (currentPage - 1) * itemsPerPage,
-                    currentPage * itemsPerPage
-                  ).map((scholarship, index) => (
-                    <ScholarshipCard 
-                      key={scholarship.id}
-                      scholarship={scholarship}
-                      isSaved={isSaved(scholarship.id)}
-                      onSave={async (sch) => {
-                        await toggleSave(sch);
-                      }}
-                      onExplain={() => handleExplain(scholarship)}
-                      isExplaining={false}
-                      isExpanded={expandedScholarshipId === scholarship.id}
-                      isSaving={!!isSaving[scholarship.id]}
-                      index={index}
-                      isAIGenerated={true}
-                    />
-                  ))}
-                </div>
-                
-                <div className="mt-8 text-center">
-                  <Button
-                    onClick={generateAIRecommendations}
-                    className="flex items-center gap-2"
-                    disabled={isGeneratingAI}
-                  >
-                    {isGeneratingAI ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4" />
-                        Generate AI Recommendations
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </>
+                {filteredAiScholarships.slice(
+                  (currentPage - 1) * itemsPerPage,
+                  currentPage * itemsPerPage
+                ).map((scholarship, index) => (
+                  <ScholarshipCard
+                    key={`ai-${scholarship.id}-${index}`}
+                    scholarship={scholarship}
+                    isSaved={isSaved(scholarship.id)}
+                    onSave={handleSave}
+                    onExplain={handleExplain}
+                    isExplaining={!!explanationLoading[scholarship.id]}
+                    isExpanded={expandedScholarshipId === scholarship.id}
+                    isSaving={!!isSaving[scholarship.id]}
+                    index={index}
+                    isAIGenerated={true}
+                  />
+                ))}
+              </div>
             )}
           </>
         )}

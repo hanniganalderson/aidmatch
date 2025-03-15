@@ -29,21 +29,12 @@ export default async function handler(req, res) {
     
     console.log(`Creating checkout session for ${email}`);
     
-    // Create a completely new product each time to avoid caching
-    const product = await stripe.products.create({
-      name: `AidMatch Plus Subscription ${Date.now()}`, // Add timestamp to make unique
-      description: 'Monthly subscription to AidMatch Plus - $9/month',
-    });
+    // Get the price ID from environment variables
+    const priceId = process.env.STRIPE_PLUS_PRICE_ID;
     
-    // Create a price for the product
-    const price = await stripe.prices.create({
-      product: product.id,
-      unit_amount: 900, // $9.00 in cents
-      currency: 'usd',
-      recurring: {
-        interval: 'month',
-      },
-    });
+    if (!priceId) {
+      return res.status(500).json({ error: 'Price ID not configured' });
+    }
     
     // Create Stripe checkout session with the price ID
     const session = await stripe.checkout.sessions.create({
@@ -51,7 +42,7 @@ export default async function handler(req, res) {
       customer_email: email,
       line_items: [
         {
-          price: price.id,
+          price: priceId,
           quantity: 1,
         },
       ],
@@ -59,20 +50,24 @@ export default async function handler(req, res) {
       success_url: `${req.headers.origin || 'https://aidmatch.co'}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.origin || 'https://aidmatch.co'}/subscription-cancel`,
       allow_promotion_codes: true,
+      // Add metadata to track the source
+      metadata: {
+        source: 'aidmatch_web',
+        user_email: email
+      }
     });
     
-    // Return the session details
+    // Return checkout session URL
     return res.status(200).json({ 
       url: session.url,
       sessionId: session.id 
     });
   } catch (error) {
-    console.error('Checkout error:', error);
+    console.error('Checkout session creation error:', error);
     
-    // Return a properly formatted error response
     return res.status(500).json({ 
       error: 'Failed to create checkout session',
-      message: error.message
+      details: error.message 
     });
   }
 }

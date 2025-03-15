@@ -1,14 +1,16 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { PageBackground } from '../components/PageBackground';
+import { Layout } from '../components/Layout';
 
 const today: string = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
-const PrivacyPolicy: React.FC = () => {
+export function PrivacyPolicy() {
   return (
-    <div className="bg-white dark:bg-gray-900 py-16">
-      <div className="container mx-auto px-4 max-w-4xl">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          <h1 className="text-3xl font-bold dark:text-white mb-6">Privacy Policy</h1>
+    <Layout backgroundVariant="subtle">
+      <div className="container mx-auto px-4 py-12">
+        <div className="max-w-3xl mx-auto bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl p-8 shadow-lg border border-gray-200 dark:border-gray-700">
+          <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Privacy Policy</h1>
           <p className="dark:text-gray-400 mb-8">Last Updated: {today}</p>
 
           <div className="prose dark:prose-invert">
@@ -55,10 +57,8 @@ const PrivacyPolicy: React.FC = () => {
             <p>Email: <strong>support@aidmatch.com</strong></p>
             <p>Location: <strong>Bend, OR</strong></p>
           </div>
-        </motion.div>
+        </div>
       </div>
-    </div>
+    </Layout>
   );
-};
-
-export default PrivacyPolicy;
+}

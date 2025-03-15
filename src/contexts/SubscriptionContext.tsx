@@ -1,115 +1,133 @@
 // src/contexts/SubscriptionContext.tsx
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useAuth } from './AuthContext';
+import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
+import { showToast } from '../lib/showToast';
 
-interface Subscription {
-  id: string;
-  status: 'active' | 'canceled' | 'past_due' | 'trialing';
-  plan: string;
-  current_period_end: string;
-}
+// Context type definitions
+type SubscriptionStatus = 'active' | 'trialing' | 'canceled' | 'incomplete' | 'past_due' | 'unpaid' | 'none';
 
 interface SubscriptionContextType {
   isSubscribed: boolean;
-  subscription: Subscription | null;
-  loading: boolean;
+  isLoading: boolean;
   error: Error | null;
+  subscriptionStatus: SubscriptionStatus;
+  subscriptionData: any;
+  lastChecked: Date | null;
   refreshSubscription: () => Promise<void>;
+  handleSubscriptionChange: (newStatus: SubscriptionStatus) => void;
 }
 
-const SubscriptionContext = createContext<SubscriptionContextType>({
-  isSubscribed: false,
-  subscription: null,
-  loading: true,
-  error: null,
-  refreshSubscription: async () => {},
-});
+const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
-export const useSubscription = () => useContext(SubscriptionContext);
-
-interface SubscriptionProviderProps {
-  children: ReactNode;
-}
-
-export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
-  const { user } = useAuth();
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [loading, setLoading] = useState(true);
+export function SubscriptionProvider({ children }: { children: ReactNode }) {
+  const { user, setIsSubscribed } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus>('none');
+  const [subscriptionData, setSubscriptionData] = useState<any>(null);
+  const [lastChecked, setLastChecked] = useState<Date | null>(null);
+  
+  // Compute isSubscribed from status
+  const isSubscribed = subscriptionStatus === 'active' || subscriptionStatus === 'trialing';
+  
+  // Update the auth context when subscription status changes
+  useEffect(() => {
+    setIsSubscribed(isSubscribed);
+  }, [isSubscribed, setIsSubscribed]);
 
-  const fetchSubscription = async () => {
+  // Function to refresh subscription data
+  const refreshSubscription = async () => {
     if (!user) {
-      setSubscription(null);
-      setLoading(false);
+      setSubscriptionStatus('none');
+      setSubscriptionData(null);
+      setIsLoading(false);
       return;
     }
 
-    try {
-      setLoading(true);
-      setError(null);
+    setIsLoading(true);
+    setError(null);
 
-      // Query for active subscriptions
-      const { data, error: subscriptionError } = await supabase
+    try {
+      // Check if we have cached data less than 5 minutes old
+      const now = new Date();
+      if (
+        lastChecked &&
+        subscriptionData &&
+        now.getTime() - lastChecked.getTime() < 5 * 60 * 1000
+      ) {
+        // Use cached data
+        showToast.info("Using cached subscription data. We're having trouble connecting to our servers.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Fetch subscription data from Supabase
+      const { data, error } = await supabase
         .from('subscriptions')
         .select('*')
         .eq('user_id', user.id)
-        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
         .single();
 
-      if (subscriptionError) {
-        // If the error is 406 (Not Acceptable), it means no rows were returned
-        // This is expected if the user doesn't have a subscription
-        if (subscriptionError.code !== '406') {
-          console.error('Error fetching subscription:', subscriptionError);
-          throw subscriptionError;
-        }
+      if (error) {
+        throw error;
       }
 
-      setSubscription(data || null);
+      // Update state with fetched data
+      if (data) {
+        setSubscriptionStatus(data.status as SubscriptionStatus);
+        setSubscriptionData(data);
+        
+        // Show toast for subscription status changes
+        if (data.status === 'active' && subscriptionStatus !== 'active') {
+          showToast.success("Welcome to AidMatch Plus! You now have access to all premium features.");
+        } else if (data.status === 'canceled' && subscriptionStatus === 'active') {
+          showToast.warning("Your Plus subscription has been canceled. You'll still have access until the end of your billing period.");
+        }
+      } else {
+        setSubscriptionStatus('none');
+        setSubscriptionData(null);
+      }
+
+      setLastChecked(now);
     } catch (err) {
-      console.error('Error in subscription context:', err);
+      console.error('Error fetching subscription:', err);
       setError(err instanceof Error ? err : new Error(String(err)));
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
+  // Handle subscription status changes
+  const handleSubscriptionChange = (newStatus: SubscriptionStatus) => {
+    setSubscriptionStatus(newStatus);
+    
+    // Show appropriate toast based on status change
+    if (newStatus === 'active') {
+      showToast.success("Your subscription is now active!");
+    } else if (newStatus === 'canceled') {
+      showToast.info("Your subscription has been canceled.");
+    } else if (newStatus === 'past_due') {
+      showToast.warning("Your subscription payment is past due. Please update your payment method.");
+    }
+  };
+
+  // Fetch subscription data on mount and when user changes
   useEffect(() => {
-    fetchSubscription();
-  }, [user]);
-
-  // Set up real-time subscription to the subscriptions table
-  useEffect(() => {
-    if (!user) return;
-
-    const subscription = supabase
-      .channel('subscription-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'subscriptions',
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
-          fetchSubscription();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(subscription);
-    };
+    refreshSubscription();
   }, [user]);
 
   const value = {
-    isSubscribed: !!subscription && subscription.status === 'active',
-    subscription,
-    loading,
+    isSubscribed,
+    isLoading,
     error,
-    refreshSubscription: fetchSubscription,
+    subscriptionStatus,
+    subscriptionData,
+    lastChecked,
+    refreshSubscription,
+    handleSubscriptionChange
   };
 
   return (
@@ -117,4 +135,12 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
       {children}
     </SubscriptionContext.Provider>
   );
+}
+
+export function useSubscription() {
+  const context = useContext(SubscriptionContext);
+  if (context === undefined) {
+    throw new Error('useSubscription must be used within a SubscriptionProvider');
+  }
+  return context;
 }

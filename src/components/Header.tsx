@@ -1,5 +1,5 @@
 // src/components/Header.tsx
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Settings, LayoutDashboard, Menu, X, Moon, Sun, User, LogOut, Crown } from 'lucide-react';
@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { PlusBadge } from './ui/PlusBadge';
+import { Button } from './ui/button';
 
 export function Header() {
   const { user, signOut, getUserDisplayName } = useAuth();
@@ -17,6 +18,8 @@ export function Header() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [displayName, setDisplayName] = useState('');
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   // Update displayName when user changes
   useEffect(() => {
@@ -37,7 +40,21 @@ export function Header() {
   // Close mobile menu on route change
   useEffect(() => {
     setMobileMenuOpen(false);
+    setUserMenuOpen(false);
   }, [location]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const navItems = [
     { label: 'Match', href: '/questionnaire', description: 'Find scholarships' },
@@ -66,8 +83,8 @@ export function Header() {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled 
-          ? 'py-2 bg-gray-950 text-white shadow-md backdrop-blur-md border-b border-gray-800'
-          : 'py-4 bg-gray-950 text-white'
+          ? 'py-2 bg-gray-950/90 backdrop-blur-md border-b border-gray-800/50 text-white'
+          : 'py-4 bg-transparent text-white'
       }`}
     >
       <div className="container mx-auto px-4">
@@ -116,166 +133,149 @@ export function Header() {
                 />
                 
                 {/* Dollar sign */}
-                <path 
-                  d="M18,11 L18,19 M15.5,13 C15.5,11.5 20.5,11.5 20.5,13 C20.5,15 15.5,15 15.5,17 C15.5,18.5 20.5,18.5 20.5,17" 
-                  stroke="white" 
-                  strokeWidth="2" 
-                  strokeLinecap="round"
-                  fill="none"
-                />
+                <text 
+                  x="18" 
+                  y="16" 
+                  textAnchor="middle" 
+                  dominantBaseline="middle" 
+                  fill="white" 
+                  fontSize="10" 
+                  fontWeight="bold"
+                >
+                  $
+                </text>
               </svg>
             </motion.div>
-            
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.15 }}
-            >
-              <h1 className="text-2xl font-bold tracking-tight text-white">
-                AidMatch
-              </h1>
-            </motion.div>
+            <span className="text-lg font-bold tracking-tight text-white">AidMatch</span>
           </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-1">
             <nav className="flex items-center mr-4">
               {navItems.map((item) => (
-                <Link
+                <NavLink
                   key={item.href}
                   to={item.href}
-                  className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    location.pathname === item.href ||
-                    location.pathname.startsWith(item.href + '/')
-                      ? 'text-primary-400'
-                      : 'text-gray-300 hover:text-primary-400 hover:bg-gray-800/50'
-                  }`}
-                >
-                  {location.pathname === item.href && (
-                    <motion.span
-                      className="absolute inset-0 rounded-lg bg-primary-900/20 -z-10"
-                      layoutId="activeNav"
-                      transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
-                    />
-                  )}
-                  {item.label}
-                </Link>
+                  label={item.label}
+                  icon={item.label === 'Plus' ? <Crown className="w-4 h-4 text-primary-400" /> : undefined}
+                />
               ))}
             </nav>
 
-            <Link
-              to="/dashboard"
-              className="p-2 rounded-lg text-gray-300 hover:text-primary-400 hover:bg-gray-800 transition-colors"
-              aria-label="Dashboard"
-            >
-              <LayoutDashboard className="w-5 h-5" />
-            </Link>
-
-            <button 
-              onClick={toggleTheme}
-              className="p-2 rounded-lg text-gray-300 hover:text-primary-400 hover:bg-gray-800 transition-colors"
-              aria-label="Toggle theme"
-            >
-              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
-
-            <Link
-              to="/settings"
-              className="p-2 rounded-lg text-gray-300 hover:text-primary-400 hover:bg-gray-800 transition-colors"
-              aria-label="Settings"
-            >
-              <Settings className="w-5 h-5" />
-            </Link>
-
-            {user ? (
-              <div className="relative">
-                <button
-                  onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center gap-2 ml-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors"
-                >
-                  <div className="w-6 h-6 rounded-full bg-primary-500 text-white flex items-center justify-center overflow-hidden text-sm font-medium">
-                    {displayName ? displayName.charAt(0).toUpperCase() : 'U'}
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-medium">
+            {/* User actions */}
+            <div className="hidden md:flex items-center gap-2">
+              {/* Dashboard link */}
+              <Link
+                to="/dashboard"
+                className="p-2 rounded-full text-gray-300 hover:bg-gray-800/50 transition-colors"
+                aria-label="Dashboard"
+              >
+                <LayoutDashboard className="w-5 h-5" />
+              </Link>
+              
+              {/* Theme Toggle */}
+              <button 
+                onClick={toggleTheme}
+                className="p-2 rounded-full text-gray-300 hover:bg-gray-800/50 transition-colors"
+                aria-label="Toggle theme"
+              >
+                {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </button>
+              
+              {/* Settings button */}
+              <Link
+                to="/settings"
+                className="p-2 rounded-full text-gray-300 hover:bg-gray-800/50 transition-colors"
+                aria-label="Settings"
+              >
+                <Settings className="w-5 h-5" />
+              </Link>
+              
+              {/* User Menu */}
+              {user ? (
+                <div className="relative" ref={userMenuRef}>
+                  <button
+                    onClick={() => setUserMenuOpen(!userMenuOpen)}
+                    className="flex items-center gap-2 py-1 px-2 rounded-full hover:bg-gray-800/50 transition-colors"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-white">
+                      {displayName ? displayName.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                    <span className="hidden lg:inline text-sm font-medium">
                       {displayName || 'User'}
                     </span>
-                    {isSubscribed && <PlusBadge size="sm" />}
-                  </div>
-                </button>
+                  </button>
 
-                <AnimatePresence>
-                  {userMenuOpen && (
-                    <motion.div
-                      initial="hidden"
-                      animate="visible"
-                      exit="exit"
-                      variants={menuAnimation}
-                      className="absolute right-0 mt-2 w-60 rounded-lg bg-gray-900 shadow-lg border border-gray-700 overflow-hidden z-50"
-                    >
-                      <div className="px-4 py-3 border-b border-gray-700">
-                        <div className="flex items-center justify-between">
+                  <AnimatePresence>
+                    {userMenuOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        transition={{ duration: 0.2 }}
+                        className="absolute right-0 mt-2 w-48 py-2 bg-gray-900 border border-gray-800 rounded-lg shadow-xl z-50"
+                      >
+                        <div className="px-4 py-2 border-b border-gray-800">
                           <p className="text-sm font-medium text-white">
                             Hi, {displayName || 'User'}
                           </p>
-                          {isSubscribed && <PlusBadge size="sm" />}
+                          <p className="text-xs text-gray-400 truncate">
+                            {user?.email || ''}
+                          </p>
                         </div>
-                        <p className="text-xs text-gray-400 truncate">
-                          {user?.email || ''}
-                        </p>
-                      </div>
-                      <div className="py-1">
-                        <Link
-                          to="/dashboard"
-                          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-200 hover:bg-gray-700"
-                        >
-                          <LayoutDashboard className="w-4 h-4" />
-                          Dashboard
-                        </Link>
-                        <Link
-                          to="/settings"
-                          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-200 hover:bg-gray-700"
-                        >
-                          <Settings className="w-4 h-4" />
-                          Settings
-                        </Link>
-                        {isSubscribed && (
+                        <div className="py-1">
                           <Link
-                            to="/account/billing"
-                            className="flex items-center gap-2 px-4 py-2 text-sm text-gray-200 hover:bg-gray-700"
+                            to="/dashboard"
+                            className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white"
                           >
-                            <Crown className="w-4 h-4 text-amber-400" />
-                            Manage Subscription
+                            <LayoutDashboard className="w-4 h-4" />
+                            Dashboard
                           </Link>
-                        )}
-                        <button
-                          onClick={handleSignOut}
-                          className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-200 hover:bg-gray-700"
-                        >
-                          <LogOut className="w-4 h-4" />
-                          Sign Out
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 ml-2">
-                <Link
-                  to="/signin"
-                  className="px-4 py-2 text-sm font-medium text-gray-200 hover:text-primary-400 transition-colors"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  to="/signup"
-                  className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-primary-500 to-primary-600 hover:opacity-90 rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
-                >
-                  Create Account
-                </Link>
-              </div>
-            )}
+                          <Link
+                            to="/settings"
+                            className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white"
+                          >
+                            <Settings className="w-4 h-4" />
+                            Settings
+                          </Link>
+                          {isSubscribed && (
+                            <Link
+                              to="/account/billing"
+                              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white"
+                            >
+                              <Crown className="w-4 h-4 text-amber-400" />
+                              Manage Subscription
+                            </Link>
+                          )}
+                          <button
+                            onClick={handleSignOut}
+                            className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white w-full text-left"
+                          >
+                            <LogOut className="w-4 h-4" />
+                            Sign Out
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Link
+                    to="/signin"
+                    className="px-4 py-2 text-sm font-medium text-gray-200 hover:text-primary-400 transition-colors"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    to="/signup"
+                    className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-primary-500 to-primary-600 hover:opacity-90 rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+                  >
+                    Create Account
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Mobile Navigation */}
@@ -320,17 +320,12 @@ export function Header() {
             >
               <div className="py-2 space-y-1 bg-gray-900 rounded-lg shadow-lg">
                 {navItems.map((item) => (
-                  <Link
+                  <MobileNavLink
                     key={item.href}
                     to={item.href}
-                    className={`block px-4 py-2 text-sm font-medium ${
-                      location.pathname === item.href
-                        ? 'text-primary-400 bg-gray-700'
-                        : 'text-gray-300 hover:text-primary-400 hover:bg-gray-700'
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
+                    label={item.label}
+                    icon={item.label === 'Plus' ? <Crown className="w-4 h-4 text-primary-400" /> : undefined}
+                  />
                 ))}
                 {user ? (
                   <>
@@ -384,5 +379,47 @@ export function Header() {
         </AnimatePresence>
       </div>
     </header>
+  );
+}
+
+// Desktop Navigation Link
+function NavLink({ to, label, icon }: { to: string; label: string; icon?: React.ReactNode }) {
+  const location = useLocation();
+  const isActive = location.pathname === to || location.pathname.startsWith(`${to}/`);
+  
+  return (
+    <Link
+      to={to}
+      className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+        isActive 
+          ? 'text-white bg-primary-900/50' 
+          : 'text-gray-300 hover:text-white hover:bg-gray-800/50'
+      }`}
+    >
+      <div className="flex items-center gap-1.5">
+        {icon}
+        {label}
+      </div>
+    </Link>
+  );
+}
+
+// Mobile Navigation Link
+function MobileNavLink({ to, label, icon }: { to: string; label: string; icon: React.ReactNode }) {
+  const location = useLocation();
+  const isActive = location.pathname === to || location.pathname.startsWith(`${to}/`);
+  
+  return (
+    <Link
+      to={to}
+      className={`flex items-center gap-3 px-3 py-2.5 rounded-md ${
+        isActive 
+          ? 'bg-primary-900/50 text-white' 
+          : 'text-gray-300 hover:bg-gray-800/50 hover:text-white'
+      }`}
+    >
+      {icon}
+      <span className="font-medium">{label}</span>
+    </Link>
   );
 }

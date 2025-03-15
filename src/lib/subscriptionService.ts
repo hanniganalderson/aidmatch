@@ -107,29 +107,25 @@ function createDiagnosticOverlay(): { log: (message: string) => void, close: () 
  */
 export async function createCheckoutSession(email: string): Promise<void> {
   try {
-    // Simple direct fetch to the API
-    const response = await fetch('/api/create-checkout-session', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email: email,
-        subscriptionType: 'plus'
-      }),
+    // Call the Supabase Edge Function
+    const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+      body: { 
+        email,
+        return_url: window.location.origin + '/subscription/success',
+        cancel_url: window.location.origin + '/subscription/cancel'
+      }
     });
     
-    if (!response.ok) {
-      throw new Error(`Request failed with status ${response.status}`);
+    if (error) throw error;
+    
+    if (!data?.url) {
+      throw new Error('No checkout URL returned');
     }
     
-    const data = await response.json();
-    
-    // Redirect to Stripe
+    // Redirect to Stripe checkout
     window.location.href = data.url;
-    
   } catch (error) {
-    console.error('Checkout error:', error);
+    console.error('Error creating checkout session:', error);
     throw error;
   }
 }

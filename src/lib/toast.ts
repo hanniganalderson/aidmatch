@@ -1,23 +1,42 @@
 import React from "react";
+import { toast as toastImpl } from '../components/ui/use-toast';
 
-// Simple toast implementation until react-hot-toast is properly installed
+// Simple toast utility that works with the existing code
 export const showToast = {
   success: (message: string) => {
-    console.log("Success:", message);
-    // Implement a basic toast notification
-    showToastMessage(message, "success");
+    toastImpl({
+      title: "Success",
+      description: message,
+      variant: "default",
+    });
   },
+  
   error: (message: string) => {
-    console.error("Error:", message);
-    showToastMessage(message, "error");
+    toastImpl({
+      title: "Error",
+      description: message,
+      variant: "destructive",
+    });
   },
-  loading: (message: string) => {
-    console.log("Loading:", message);
-    return showToastMessage(message, "loading");
+  
+  info: (message: string) => {
+    toastImpl({
+      title: "Info",
+      description: message,
+    });
   },
-  custom: (message: React.ReactNode) => {
-    console.log("Custom toast");
-    showToastMessage("Custom notification", "default");
+  
+  warning: (message: string) => {
+    toastImpl({
+      title: "Warning",
+      description: message,
+    });
+  },
+  
+  custom: (content: React.ReactNode) => {
+    toastImpl({
+      description: content,
+    });
   }
 };
 

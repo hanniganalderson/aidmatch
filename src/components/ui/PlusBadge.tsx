@@ -1,92 +1,46 @@
 // src/components/ui/PlusBadge.tsx
 import React from 'react';
-import { Crown, Sparkles } from 'lucide-react';
-import { motion, MotionProps } from 'framer-motion';
+import { Crown } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
-interface PlusBadgeProps extends Omit<React.HTMLAttributes<HTMLDivElement>, keyof MotionProps> {
+interface PlusBadgeProps {
+  variant?: 'default' | 'glow' | 'subtle';
   size?: 'sm' | 'md' | 'lg';
-  variant?: 'default' | 'minimal' | 'glow'; 
+  className?: string;
 }
 
 export function PlusBadge({ 
-  size = 'md', 
-  variant = 'default',
-  className,
-  ...props
+  variant = 'default', 
+  size = 'md',
+  className 
 }: PlusBadgeProps) {
-  // Size classes for the badge
   const sizeClasses = {
-    sm: 'text-xs py-0.5 px-1.5',
-    md: 'text-xs py-1 px-2',
-    lg: 'text-sm py-1 px-2.5'
+    sm: 'text-xs px-1.5 py-0.5 gap-0.5',
+    md: 'text-sm px-2 py-0.5 gap-1',
+    lg: 'text-base px-2.5 py-1 gap-1.5',
   };
   
-  // Icon size based on badge size
-  const iconSize = {
+  const variantClasses = {
+    default: 'bg-primary-600 text-white',
+    glow: 'bg-primary-600 text-white shadow-glow-sm',
+    subtle: 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300',
+  };
+  
+  const iconSizes = {
     sm: 'w-3 h-3',
     md: 'w-3.5 h-3.5',
-    lg: 'w-4 h-4'
+    lg: 'w-4 h-4',
   };
   
-  // Logic for different variants
-  if (variant === 'minimal') {
-    // Just the crown icon with no background
-    return (
-      <Crown 
-        className={cn(
-          "text-amber-500 dark:text-amber-400",
-          iconSize[size],
-          className
-        )} 
-      />
-    );
-  }
-  
-  if (variant === 'glow') {
-    // Animated glowing badge
-    return (
-      <motion.div
-        initial={{ 
-          opacity: 0.9, 
-          boxShadow: '0 0 0 rgba(124, 58, 237, 0)' 
-        }}
-        animate={{ 
-          opacity: 1, 
-          boxShadow: [
-            '0 0 0px rgba(124, 58, 237, 0.3)', 
-            '0 0 8px rgba(124, 58, 237, 0.5)', 
-            '0 0 0px rgba(124, 58, 237, 0.3)'
-          ]
-        }}
-        transition={{ duration: 2, repeat: Infinity }}
-        className={cn(
-          "rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-medium",
-          "flex items-center gap-1 whitespace-nowrap",
-          sizeClasses[size],
-          className
-        )}
-        {...props}
-      >
-        <Sparkles className={iconSize[size]} />
-        <span>Plus</span>
-      </motion.div>
-    );
-  }
-  
-  // Default badge
   return (
-    <div
-      className={cn(
-        "rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-medium",
-        "flex items-center gap-1 whitespace-nowrap",
-        sizeClasses[size],
-        className
-      )}
-      {...props}
-    >
-      <Crown className={iconSize[size]} />
+    <span className={cn(
+      'inline-flex items-center rounded-full font-medium',
+      sizeClasses[size],
+      variantClasses[variant],
+      className
+    )}>
+      <Crown className={iconSizes[size]} />
       <span>Plus</span>
-    </div>
+    </span>
   );
 }

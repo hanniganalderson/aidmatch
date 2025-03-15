@@ -6,6 +6,8 @@ import { supabase } from '../lib/supabase';
 import { FeatureName } from '../lib/feature-management';
 import { PaywallModal } from './ui/PaywallModal';
 import { ReactNode } from 'react';
+import { useSubscription } from '../contexts/SubscriptionContext';
+import { PlusUpgradePrompt } from './PlusUpgradePrompt';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -14,6 +16,8 @@ interface ProtectedRouteProps {
   requiredSubscription?: boolean; // Add this prop to check for subscription
   requiredFeature?: FeatureName;
   requireQuestionnaire?: boolean;
+  requiresSubscription?: boolean;
+  redirectTo?: string;
 }
 
 export function ProtectedRoute({ 
@@ -22,14 +26,18 @@ export function ProtectedRoute({
   skipQuestionnaireCheck = false,
   requiredSubscription = false,
   requiredFeature,
-  requireQuestionnaire = false
+  requireQuestionnaire = false,
+  requiresSubscription = false,
+  redirectTo = '/signin'
 }: ProtectedRouteProps) {
-  const { user, loading, isSubscribed } = useAuth();
+  const { user, isSubscribed, isLoading } = useAuth();
+  const { isSubscribed: subscriptionIsSubscribed } = useSubscription();
   const location = useLocation();
   const [profileLoading, setProfileLoading] = useState(true);
   const [hasCompletedQuestionnaire, setHasCompletedQuestionnaire] = useState<boolean | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
   const [checkingQuestionnaire, setCheckingQuestionnaire] = useState(true);
+  const [loading, setLoading] = useState(true); // Add loading state since it was used but not defined
 
   // Check if the user has completed the questionnaire
   useEffect(() => {
@@ -63,12 +71,12 @@ export function ProtectedRoute({
       }
     };
 
-    if (user && !loading) {
+    if (user) {
       checkUserStatus();
     } else {
       setProfileLoading(false);
     }
-  }, [user, loading]);
+  }, [user]);
 
   useEffect(() => {
     // Skip questionnaire check if specified
@@ -114,8 +122,13 @@ export function ProtectedRoute({
     checkQuestionnaire();
   }, [user, skipQuestionnaireCheck]);
 
+  // Set loading state based on other loading states
+  useEffect(() => {
+    setLoading(profileLoading || checkingQuestionnaire);
+  }, [profileLoading, checkingQuestionnaire]);
+
   // Show loading state while checking auth and profile
-  if (loading || profileLoading || checkingQuestionnaire) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
@@ -126,7 +139,7 @@ export function ProtectedRoute({
 
   // If authentication is required but user is not logged in, redirect to sign in
   if (requireAuth && !user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to={redirectTo} replace />;
   }
 
   // Special cases where we should skip the questionnaire check
@@ -145,7 +158,11 @@ export function ProtectedRoute({
   }
 
   // Check if subscription is required and user is not subscribed
-  if (requiredSubscription && !isSubscribed) {
+  if (requiresSubscription && !isSubscribed) {
+    return <PlusUpgradePrompt />;
+  }
+
+  if (requiredSubscription && !subscriptionIsSubscribed) {
     // Instead of redirecting, show the paywall modal
     if (!showPaywall) {
       setShowPaywall(true);

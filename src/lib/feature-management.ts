@@ -1,10 +1,14 @@
 export enum FeatureName {
-  SAVED_SCHOLARSHIPS = 'saved_scholarships',
   AI_RECOMMENDATIONS = 'ai_recommendations',
+  SAVED_SCHOLARSHIPS = 'saved_scholarships',
+  MATCHES_VIEWED = 'matches_viewed',
   ESSAY_ASSISTANCE = 'essay_assistance',
-  DEADLINE_REMINDERS = 'deadline_reminders',
-  ADVANCED_FILTERS = 'advanced_filters',
-  EXPORT_DATA = 'export_data',
+  FINANCIAL_OPTIMIZER = 'financial_optimizer',
+  DEADLINE_TRACKER = 'deadline_tracker',
+  AUTO_FILL = 'auto_fill',
+  ADVANCED_FILTERS = 'advanced_filters', // Add missing feature
+  EXPORT_DATA = 'export_data', // Add missing feature
+  DEADLINE_REMINDERS = 'deadline_reminders' // Add missing feature
 }
 
 export interface FeatureLimit {
@@ -38,12 +42,26 @@ export const FEATURE_LIMITS: Record<FeatureName, FeatureLimit> = {
     description: 'Get AI assistance with scholarship essays',
     upgradeMessage: 'Upgrade to Plus to unlock AI essay assistance'
   },
-  [FeatureName.DEADLINE_REMINDERS]: {
-    name: FeatureName.DEADLINE_REMINDERS,
+  [FeatureName.FINANCIAL_OPTIMIZER]: {
+    name: FeatureName.FINANCIAL_OPTIMIZER,
+    freeLimit: 0, // Not available in free plan
+    plusLimit: null, // unlimited
+    description: 'Optimize your financial aid package',
+    upgradeMessage: 'Upgrade to Plus to unlock financial optimization'
+  },
+  [FeatureName.DEADLINE_TRACKER]: {
+    name: FeatureName.DEADLINE_TRACKER,
     freeLimit: 3,
     plusLimit: null, // unlimited
-    description: 'Set reminders for scholarship deadlines',
-    upgradeMessage: 'Upgrade to Plus for unlimited deadline reminders'
+    description: 'Track scholarship application deadlines',
+    upgradeMessage: 'Upgrade to Plus for unlimited deadline tracking'
+  },
+  [FeatureName.AUTO_FILL]: {
+    name: FeatureName.AUTO_FILL,
+    freeLimit: 0, // Not available in free plan
+    plusLimit: null, // unlimited
+    description: 'Auto-fill scholarship applications',
+    upgradeMessage: 'Upgrade to Plus to unlock auto-fill'
   },
   [FeatureName.ADVANCED_FILTERS]: {
     name: FeatureName.ADVANCED_FILTERS,
@@ -59,6 +77,20 @@ export const FEATURE_LIMITS: Record<FeatureName, FeatureLimit> = {
     description: 'Export your scholarship data',
     upgradeMessage: 'Upgrade to Plus to export your data'
   },
+  [FeatureName.MATCHES_VIEWED]: {
+    name: FeatureName.MATCHES_VIEWED,
+    freeLimit: 10,
+    plusLimit: null, // unlimited
+    description: 'View scholarship matches',
+    upgradeMessage: 'Upgrade to Plus for unlimited match views'
+  },
+  [FeatureName.DEADLINE_REMINDERS]: {
+    name: FeatureName.DEADLINE_REMINDERS,
+    freeLimit: 3,
+    plusLimit: null, // unlimited
+    description: 'Set scholarship deadline reminders',
+    upgradeMessage: 'Upgrade to Plus for unlimited reminders'
+  }
 }
 
 // Feature usage tracking service
@@ -159,4 +191,84 @@ export class FeatureUsageService {
       return 0;
     }
   }
-} 
+}
+
+// Define limits for free users
+export const FREE_USER_LIMITS: Record<string, number> = {
+  [FeatureName.AI_RECOMMENDATIONS]: 5,
+  [FeatureName.SAVED_SCHOLARSHIPS]: 10,
+  [FeatureName.MATCHES_VIEWED]: 50,
+  [FeatureName.ESSAY_ASSISTANCE]: 3,
+  [FeatureName.FINANCIAL_OPTIMIZER]: 2,
+  [FeatureName.DEADLINE_TRACKER]: 5,
+  [FeatureName.AUTO_FILL]: 3,
+  [FeatureName.ADVANCED_FILTERS]: 0,
+  [FeatureName.EXPORT_DATA]: 0,
+  [FeatureName.DEADLINE_REMINDERS]: 3
+};
+
+// Define feature descriptions for UI
+export const FEATURE_DESCRIPTIONS: Record<string, string> = {
+  [FeatureName.AI_RECOMMENDATIONS]: 'Get AI-powered scholarship recommendations based on your profile',
+  [FeatureName.SAVED_SCHOLARSHIPS]: 'Save scholarships to your personal list',
+  [FeatureName.MATCHES_VIEWED]: 'View detailed scholarship matches',
+  [FeatureName.ESSAY_ASSISTANCE]: 'Get AI assistance with scholarship essays',
+  [FeatureName.FINANCIAL_OPTIMIZER]: 'Optimize your financial aid package',
+  [FeatureName.DEADLINE_TRACKER]: 'Track scholarship application deadlines',
+  [FeatureName.AUTO_FILL]: 'Auto-fill scholarship applications',
+  [FeatureName.ADVANCED_FILTERS]: 'Access advanced scholarship filters',
+  [FeatureName.EXPORT_DATA]: 'Export your scholarship data',
+  [FeatureName.DEADLINE_REMINDERS]: 'Get reminders for scholarship deadlines'
+};
+
+// Define feature icons (for UI components)
+export const FEATURE_ICONS: Record<string, string> = {
+  [FeatureName.AI_RECOMMENDATIONS]: 'Sparkles',
+  [FeatureName.SAVED_SCHOLARSHIPS]: 'Bookmark',
+  [FeatureName.MATCHES_VIEWED]: 'Search',
+  [FeatureName.ESSAY_ASSISTANCE]: 'FileText',
+  [FeatureName.FINANCIAL_OPTIMIZER]: 'DollarSign',
+  [FeatureName.DEADLINE_TRACKER]: 'Calendar',
+  [FeatureName.AUTO_FILL]: 'ClipboardCheck',
+  [FeatureName.ADVANCED_FILTERS]: 'Filter',
+  [FeatureName.EXPORT_DATA]: 'Download',
+  [FeatureName.DEADLINE_REMINDERS]: 'Bell'
+};
+
+// Check if a feature is available based on subscription and usage
+export function isFeatureAvailable(
+  featureName: FeatureName,
+  isSubscribed: boolean,
+  currentUsage: number
+): boolean {
+  // Subscribed users always have access to all features
+  if (isSubscribed) return true;
+  
+  // Free users are limited by usage counts
+  const limit = FREE_USER_LIMITS[featureName];
+  return currentUsage < limit;
+}
+
+// Get the remaining usage for a feature
+export function getRemainingUsage(
+  featureName: FeatureName,
+  isSubscribed: boolean,
+  currentUsage: number
+): number {
+  if (isSubscribed) return Infinity;
+  
+  const limit = FREE_USER_LIMITS[featureName];
+  return Math.max(0, limit - currentUsage);
+}
+
+// Get the usage percentage for a feature
+export function getUsagePercentage(
+  featureName: FeatureName,
+  isSubscribed: boolean,
+  currentUsage: number
+): number {
+  if (isSubscribed) return 0; // Always show 0% for subscribed users
+  
+  const limit = FREE_USER_LIMITS[featureName];
+  return Math.min(100, Math.round((currentUsage / limit) * 100));
+}

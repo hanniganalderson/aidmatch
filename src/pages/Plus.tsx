@@ -21,6 +21,7 @@ import { supabase } from '../lib/supabase';
 import { createCheckoutSession } from '../lib/subscriptionService';
 import { Button } from '../components/ui/button';
 import { SimpleCheckoutButton } from '../components/SimpleCheckoutButton';
+import { useToast } from '../components/ui/use-toast';
 
 export function Plus(): JSX.Element {
   const navigate = useNavigate();
@@ -29,6 +30,7 @@ export function Plus(): JSX.Element {
   const [error, setError] = useState<string | null>(null);
   const [userSubscription, setUserSubscription] = useState<any>(null);
   const [isHoveringPlus, setIsHoveringPlus] = useState(false);
+  const { showToast } = useToast();
 
   // Use intersection observer for scroll animations
   const [heroRef, heroInView] = useInView({
@@ -71,36 +73,34 @@ export function Plus(): JSX.Element {
     checkSubscription();
   }, [user]);
 
-  const handleUpgrade = async () => {
-    // If user isn't logged in, redirect to sign in
-    if (!user) {
-      navigate('/signin', { state: { returnTo: '/plus'} });
-      return;
-    }
-    
+  const handleCheckout = async () => {
     setSubmitting(true);
-    setError(null);
     
     try {
-      console.log('Starting checkout process for email:', user.email);
-      
-      // Ensure we have a valid email before proceeding
-      if (!user.email) {
-        throw new Error('User email not available');
+      if (!user) {
+        navigate('/signin', { state: { from: '/plus' } });
+        return;
       }
       
-      await createCheckoutSession(user.email);
+      // Navigate to Stripe checkout
+      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+        body: { 
+          email: user.email,
+          return_url: window.location.origin + '/subscription/success',
+          cancel_url: window.location.origin + '/subscription/cancel'
+        }
+      });
       
-      // If createCheckoutSession doesn't throw, it will redirect the user
-      // We shouldn't reach this code, but just in case:
-      console.log('Checkout initiated successfully');
-    } catch (err) {
-      console.error('Upgrade error:', err);
-      setError(
-        err instanceof Error 
-          ? err.message 
-          : 'An unknown error occurred during checkout'
-      );
+      if (error) throw error;
+      
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL returned');
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      showToast.error('Failed to start checkout. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -324,7 +324,7 @@ export function Plus(): JSX.Element {
                 </Button>
               ) : (
                 <Button 
-                  onClick={handleUpgrade}
+                  onClick={handleCheckout}
                   disabled={submitting}
                   className="w-full bg-white hover:bg-gray-100 text-indigo-700 py-3 mb-8 group flex items-center justify-center gap-2"
                 >
@@ -394,31 +394,39 @@ export function Plus(): JSX.Element {
               </p>
               
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                {userSubscription ? (
-                  <Button
-                    className="px-8 py-3 bg-white hover:bg-gray-100 text-indigo-700 rounded-lg font-medium transition-colors shadow-md flex items-center gap-2"
-                    onClick={() => navigate('/dashboard')}
-                  >
-                    Go to Dashboard
-                  </Button>
-                ) : (
-                  <>
-                    <Button
-                      className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors shadow-md flex items-center gap-2"
-                      onClick={handleUpgrade}
-                    >
-                      <Zap className="w-5 h-5" />
-                      <span>Upgrade to Plus</span>
-                    </Button>
+                {userSubscription && userSubscription.status === 'active' ? (
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="flex items-center gap-2 bg-green-100 text-green-800 px-4 py-2 rounded-full">
+                      <Check className="h-5 w-5" />
+                      <span className="font-medium">You're already a Plus member!</span>
+                    </div>
                     
                     <Button
-                      variant="outline"
-                      className="px-8 py-3 border-white/30 text-white hover:bg-white/10 rounded-lg font-medium transition-colors"
-                      onClick={() => navigate('/questionnaire')}
+                      size="lg"
+                      onClick={() => navigate('/billing')}
+                      className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8"
                     >
-                      Start Matching
+                      Manage Subscription
                     </Button>
-                  </>
+                  </div>
+                ) : (
+                  <SimpleCheckoutButton
+                    email={user?.email || ''}
+                    className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-3 rounded-lg font-medium text-lg flex items-center gap-2"
+                    disabled={submitting}
+                  >
+                    {submitting ? (
+                      <>
+                        <span className="animate-spin">⏳</span>
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-5 w-5" />
+                        Upgrade to Plus
+                      </>
+                    )}
+                  </SimpleCheckoutButton>
                 )}
               </div>
             </div>
@@ -429,23 +437,15 @@ export function Plus(): JSX.Element {
       {/* Add floating animation keyframes */}
       <style dangerouslySetInnerHTML={{
         __html: `
-          @keyframes drift {
-            0% { transform: translate(0, 0); }
-            50% { transform: translate(-15px, 20px); }
-            100% { transform: translate(0, 0); }
-          }
-          @keyframes drift-slow {
-            0% { transform: translate(0, 0); }
-            50% { transform: translate(15px, -20px); }
-            100% { transform: translate(0, 0); }
-          }
-          .animate-drift {
-            animation: drift 15s ease-in-out infinite;
-          }
-          .animate-drift-slow {
-            animation: drift-slow 18s ease-in-out infinite;
-          }
-        `
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+      100% { transform: translateY(0px); }
+    }
+    .floating {
+      animation: float 3s ease-in-out infinite;
+    }
+  `
       }} />
     </div>
   );

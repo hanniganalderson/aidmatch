@@ -2,26 +2,50 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Sparkles, Bookmark, Calendar, Award, DollarSign, 
-  ArrowRight, Crown, Search, AlertCircle, Lock, 
-  PenTool, FileText, Zap, Bell
+  User, Bookmark, Search, Edit,
+  ArrowRight, Crown, PlusCircle, Settings
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
-import { Badge } from './ui/badge';
-import { ScholarshipCard } from './ScholarshipCard';
 import { useSavedScholarships } from '../hooks/useScholarshipMatching';
+import { createCheckoutSession } from '../lib/subscriptionService';
 import { supabase } from '../lib/supabase';
-import type { ScoredScholarship } from '../types';
 
 export function FreeDashboard() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('overview');
-  const [topScholarships, setTopScholarships] = useState<ScoredScholarship[]>([]);
+  const { user, getUserDisplayName } = useAuth();
+  const [displayName, setDisplayName] = useState('');
+  const { savedScholarships } = useSavedScholarships(user?.id);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const { savedScholarships, toggleSave, isSaving } = useSavedScholarships(user?.id);
+
+  useEffect(() => {
+    if (user) {
+      setDisplayName(getUserDisplayName());
+      fetchUserProfile();
+    }
+  }, [user, getUserDisplayName]);
+
+  const fetchUserProfile = async () => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+        
+      if (error) throw error;
+      setUserProfile(data);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Animation variants
   const containerVariants = {
@@ -33,7 +57,7 @@ export function FreeDashboard() {
       }
     }
   };
-
+  
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
@@ -45,209 +69,184 @@ export function FreeDashboard() {
     }
   };
 
-  // Fetch top scholarships
-  useEffect(() => {
-    const fetchTopScholarships = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('scholarships')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(3);
-          
-        if (error) throw error;
-        
-        // Transform to ScoredScholarship type
-        const scholarships: ScoredScholarship[] = data.map(item => ({
-          id: item.id,
-          name: item.name,
-          amount: item.amount,
-          deadline: item.deadline,
-          description: item.description,
-          requirements: item.requirements,
-          url: item.url,
-          score: Math.floor(Math.random() * 30) + 70, // Random score between 70-100
-          match_score: Math.floor(Math.random() * 30) + 70
-        }));
-        
-        setTopScholarships(scholarships);
-      } catch (err) {
-        console.error('Error fetching scholarships:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchTopScholarships();
-  }, []);
+  const handleUpgrade = async () => {
+    try {
+      navigate('/plus');
+    } catch (error) {
+      console.error('Upgrade error:', error);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-850 dark:to-gray-800 pt-16 pb-12">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Welcome Section with Futuristic Border */}
-        <motion.div 
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="max-w-7xl mx-auto"
-        >
-          <motion.div 
-            variants={itemVariants}
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700 relative mb-8"
-          >
-            {/* Decorative elements */}
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-indigo-500"></div>
-            <div className="absolute -top-24 -right-24 w-48 h-48 rounded-full bg-blue-100/20 dark:bg-blue-900/10 blur-2xl"></div>
-            
-            <div className="p-6">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                Welcome back, {user?.user_metadata?.name || 'Scholar'}
-              </h1>
-              <p className="text-gray-600 dark:text-gray-300">
-                Track your saved scholarships and find new opportunities.
-              </p>
-            </div>
-          </motion.div>
-          
-          {/* Main Content - Two Column Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column - Saved Scholarships */}
-            <motion.div 
-              variants={containerVariants}
-              className="lg:col-span-2"
-            >
-              <motion.div 
-                variants={itemVariants}
-                className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700 relative"
-              >
-                {/* Decorative border */}
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-400 to-purple-500"></div>
-                
-                <div className="p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                    <Bookmark className="w-5 h-5 mr-2 text-indigo-500 dark:text-indigo-400" />
-                    Your Saved Scholarships
-                  </h2>
-                  
-                  {/* Saved scholarships content */}
-                  {savedScholarships.length === 0 ? (
-                    <div className="text-center py-8">
-                      <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Bookmark className="w-8 h-8 text-gray-400 dark:text-gray-500" />
-                      </div>
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No saved scholarships yet</h3>
-                      <p className="text-gray-500 dark:text-gray-400 mb-4">
-                        Start exploring to find and save scholarships that match your profile.
-                      </p>
-                      <Button
-                        onClick={() => navigate('/questionnaire')}
-                        className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
-                      >
-                        Find Scholarships
-                      </Button>
+    <div className="container mx-auto px-4 py-8">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="space-y-6"
+      >
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Welcome, {displayName}
+          </h1>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+          {/* User Profile Card */}
+          <motion.div variants={itemVariants}>
+            <Card className="p-6 h-full">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-full">
+                  <User className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Your Profile
+                </h2>
+              </div>
+              
+              {loading ? (
+                <div className="flex justify-center py-4">
+                  <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : (
+                <div className="space-y-3 mb-4">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-500 dark:text-gray-400">Name:</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">{displayName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-500 dark:text-gray-400">Email:</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">{user?.email}</span>
+                  </div>
+                  {userProfile?.education_level && (
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">Education:</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">{userProfile.education_level}</span>
                     </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {/* Saved scholarship cards */}
+                  )}
+                  {userProfile?.major && (
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">Major:</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">{userProfile.major}</span>
                     </div>
                   )}
                 </div>
-              </motion.div>
-            </motion.div>
-            
-            {/* Right Column - Profile & Features */}
-            <motion.div 
-              variants={containerVariants}
-              className="space-y-6"
-            >
-              {/* Profile Card */}
-              <motion.div 
-                variants={itemVariants}
-                className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700 relative"
-              >
-                {/* Decorative border */}
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-emerald-500"></div>
-                
-                <div className="p-6">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                    Your Profile
-                  </h2>
-                  
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-500 dark:text-gray-400">Account Type</span>
-                      <Badge className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-                        Free
-                      </Badge>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-500 dark:text-gray-400">Saved Scholarships</span>
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">
-                        {savedScholarships.length}/3
-                      </span>
-                    </div>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate('/settings')}
-                      className="w-full mt-2"
-                    >
-                      Manage Profile
-                    </Button>
-                  </div>
-                </div>
-              </motion.div>
+              )}
               
-              {/* Features Card - More Subtle */}
-              <motion.div 
-                variants={itemVariants}
-                className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-750 rounded-xl shadow-lg overflow-hidden border border-indigo-100 dark:border-indigo-900/20 relative"
+              <Button
+                onClick={() => navigate('/settings')}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
               >
-                <div className="p-6">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                    <Sparkles className="w-5 h-5 mr-2 text-indigo-500 dark:text-indigo-400" />
-                    Scholarship Tools
-                  </h2>
-                  
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3 p-3 bg-white dark:bg-gray-700/50 rounded-lg">
-                      <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
-                        <PenTool className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-900 dark:text-white">Essay Assistant</h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">AI-powered writing help</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-3 p-3 bg-white dark:bg-gray-700/50 rounded-lg">
-                      <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                        <DollarSign className="w-4 h-4 text-green-600 dark:text-green-400" />
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-900 dark:text-white">Financial Aid</h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Maximize your funding</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-3 p-3 bg-white dark:bg-gray-700/50 rounded-lg">
-                      <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                        <Calendar className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-900 dark:text-white">Deadline Tracker</h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Never miss a deadline</p>
-                      </div>
-                    </div>
-                  </div>
+                <Settings className="w-4 h-4 mr-2" />
+                Update Profile
+              </Button>
+            </Card>
+          </motion.div>
+          
+          {/* Find Scholarships Card */}
+          <motion.div variants={itemVariants}>
+            <Card className="p-6 h-full">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-full">
+                  <Search className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                 </div>
-              </motion.div>
-            </motion.div>
-          </div>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Find Scholarships
+                </h2>
+              </div>
+              
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                Discover scholarships that match your profile and interests.
+              </p>
+              
+              <Button
+                onClick={() => navigate('/questionnaire')}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+              >
+                <Search className="w-4 h-4 mr-2" />
+                Browse Scholarships
+              </Button>
+            </Card>
+          </motion.div>
+          
+          {/* Saved Scholarships Card */}
+          <motion.div variants={itemVariants}>
+            <Card className="p-6 h-full">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-full">
+                  <Bookmark className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Saved Scholarships
+                </h2>
+              </div>
+              
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                You have {savedScholarships?.length || 0} saved scholarships.
+              </p>
+              
+              <Button
+                onClick={() => navigate('/saved')}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+              >
+                <Bookmark className="w-4 h-4 mr-2" />
+                View Saved Scholarships
+              </Button>
+            </Card>
+          </motion.div>
+          
+          {/* Contribute Card */}
+          <motion.div variants={itemVariants}>
+            <Card className="p-6 h-full">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-full">
+                  <Edit className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Contribute
+                </h2>
+              </div>
+              
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                Help others by adding scholarships to our database.
+              </p>
+              
+              <Button
+                onClick={() => navigate('/contribute')}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                Add Scholarship
+              </Button>
+            </Card>
+          </motion.div>
+        </div>
+        
+        {/* Upgrade Banner - Single, subtle promotion */}
+        <motion.div variants={itemVariants}>
+          <Card className="p-6 border-indigo-200 dark:border-indigo-800 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
+                  <Crown className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mr-2" />
+                  Unlock Premium Features
+                </h2>
+                <p className="mt-2 text-gray-600 dark:text-gray-400">
+                  Get unlimited access to AI essay assistance, advanced matching, and more.
+                </p>
+              </div>
+              
+              <Button 
+                onClick={handleUpgrade}
+                className="whitespace-nowrap bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:opacity-90"
+              >
+                <PlusCircle className="w-4 h-4 mr-2" />
+                Upgrade to Plus
+              </Button>
+            </div>
+          </Card>
         </motion.div>
-      </div>
+      </motion.div>
     </div>
   );
-} 
+}
